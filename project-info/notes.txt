@@ -1,0 +1,7 @@
+We should never commit our data! It is super private data that we don't want  in github. It is low-resourced language data
+
+For the initial 10,000 sentences, I can bring them here, So I can bring them here. They were like a toy bar sentences. Now the thing is that they were really random French sentences that were long, short, medium, and stuff. That's one of the issues that we have with the initial tutorial sentences.
+
+We also did a lot of work in another project about cleaning data, so we have a lot of scripts to do some kind of normalization and stuff like that. Even when we weren't really deep into things.
+
+You can ask me if you need anything, I can bring in here or whatever, but that's kind of what we are doing right now. 

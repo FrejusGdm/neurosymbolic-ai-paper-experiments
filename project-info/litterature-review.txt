@@ -1,0 +1,82 @@
+Literature Review: Principled Data Construction for Low-Resource Neural Machine Translation
+1. From “More Data Is Better” to Data Quality in Low-Resource Settings
+The dominant paradigm in Neural Machine Translation (NMT) has historically favored scale, operating under the assumption that sufficiently large datasets can overcome noise through sheer statistical signal. This assumption is rooted in a broader tradition within machine learning and natural language processing that emphasizes the primacy of data volume over careful data curation. Halevy et al. (2009) famously argued for the “unreasonable effectiveness of data,” asserting that with enough examples, even simple models can achieve strong performance through memorization and statistical regularities. Earlier empirical work by Banko and Brill (2001) similarly demonstrated that scaling training data by orders of magnitude often yields larger performance gains than algorithmic refinements, a finding that strongly influenced subsequent NLP research.
+This scale-centric mindset was directly inherited by early NMT systems. Seminal architectures such as sequence-to-sequence models (Sutskever et al., 2014) and the Transformer (Vaswani et al., 2017) achieved their best results on high-resource language pairs trained on tens of millions of sentence pairs, reinforcing the view that data quantity was a prerequisite for translation quality. Production-level systems such as Google’s Neural Machine Translation model were explicitly designed to “carry over to much larger production data sets,” framing scalability as a core virtue of neural approaches (Wu et al., 2016). Koehn and Knowles (2017) further identified NMT’s dependence on large volumes of parallel data as one of its central challenges, particularly when compared to phrase-based statistical methods.
+However, this assumption has been decisively challenged in low-resource settings. Khayrallah and Koehn (2018) provided foundational evidence that NMT models are disproportionately sensitive to noise compared to statistical machine translation, showing that even small amounts of misaligned or corrupted data can trigger hallucinations and catastrophic degradation. Parallel lines of work in corpus filtering reinforced this finding: Junczys-Dowmunt (2018) demonstrated that aggressively filtered subsets of noisy web-crawled corpora can outperform much larger unfiltered datasets, while the WMT Parallel Corpus Filtering shared tasks institutionalized the idea that selecting the top few percent of data by quality is often preferable to using all available data (Koehn et al., 2019).
+This shift toward data quality has been further codified by large-scale multilingual initiatives. The No Language Left Behind (NLLB) project achieved state-of-the-art performance across 200 languages by combining extensive data filtering, human-verified benchmarks, and careful dataset construction, rather than relying solely on raw scale (NLLB Team, 2022). Similarly, Ranathunga et al. (2024) showed that for low-resource web-mined corpora, aggressive removal of toxic, misaligned, or low-quality sentence pairs consistently improves BLEU scores, often allowing smaller, cleaner datasets to outperform their larger counterparts. Artetxe and Schwenk (2019) likewise emphasized that machine translation quality is highly sensitive to both the size and quality of training data, motivating careful mining and filtering strategies.
+Taken together, these findings suggest that for extremely low-resource languages such as Adja, where large-scale web data is effectively nonexistent, the traditional “scrape and hope” paradigm is fundamentally ill-suited. The field is increasingly recognizing that dense, high-signal datasets may be more valuable than sparse, noisy collections, opening the door to principled data construction methodologies.
+2. Curriculum Learning and the Limits of Post-Hoc Data Reordering
+Our proposed methodology aligns closely with the framework of Curriculum Learning (CL), first formalized by Bengio et al. (2009). Curriculum Learning posits that models converge faster and generalize better when training examples are presented in a meaningful progression, beginning with simpler concepts and gradually increasing in complexity rather than being sampled uniformly at random. This idea has proven particularly effective in neural machine translation, where optimization landscapes are highly non-convex and sensitive to early training dynamics.
+Platanios et al. (2019) introduced competence-based curriculum learning for NMT, showing that models benefit from mastering high-frequency lexical and structural patterns before being exposed to rarer and syntactically complex constructions. Subsequent work by Zhou et al. (2020) further demonstrated that uncertainty-aware curricula, which delay ambiguous or difficult examples until later stages of training, can prevent models from becoming trapped in poor local minima, a failure mode that disproportionately affects low-resource systems.
+Despite these advances, a critical gap remains in the literature. Existing curriculum learning approaches overwhelmingly assume the existence of a large, randomly collected dataset and focus on reordering or reweighting examples during training. In other words, they attempt to “sort the mess” after data collection has already occurred. Very little work addresses the question of how the dataset itself might be constructed as a curriculum from the ground up.
+Our work directly addresses this gap. By structuring the Adja corpus according to a grammatical syllabus (e.g., simple SVO constructions → tense and aspect → complex clauses), we embed the curriculum directly into the topology of the dataset. This approach transforms the corpus into a pedagogical artifact rather than a passive collection of examples, aligning data construction with the known sensitivities of neural optimization in low-resource regimes.
+3. Linguistic Structure, Lexical Coverage, and the Long Tail of Language Phenomena
+The necessity of a structured, linguistically informed approach to data construction is further supported by recent work on lexical coverage and distributional sparsity in low-resource languages. Jones et al. (2023), in their introduction of the GATITOS dataset, argue that carefully curated lexica are superior to larger, noisier ones for low-resource machine translation. They show that ensuring coverage of key semantic concepts and grammatical functions yields stable translation baselines that random web-crawling fails to replicate.
+This finding is particularly important in light of what Nielsen et al. (2025) term the “Alligator Problem,” where models trained on sparse and unbalanced data confuse distinct but distributionally similar words within a domain due to insufficient co-occurrence evidence. Their large-scale analysis across 122 low-resource languages demonstrates that lexical confusions are a dominant failure mode in low-resource MT, one that is poorly addressed by simply increasing data volume.
+Recent work on data augmentation further clarifies the importance of respecting linguistic structure. Groshan et al. (2025) show that linguistically motivated data augmentation only improves performance when synthetic examples closely match the natural distribution of the language; poorly grounded augmentation can actively harm low-resource models. Our proposed methodology sidesteps this risk by eliciting naturally occurring sentences guided by grammatical rules, rather than generating synthetic data. This allows us to achieve structural coverage while preserving distributional fidelity.
+Together, these results position our work at the intersection of linguistic fieldwork and data-centric AI. Rather than treating data collection as a purely engineering problem, we approach it as a design task informed by linguistic theory, with the explicit goal of maximizing learning signal per sentence.
+4. Evaluation and the African Language Context
+Recent work on African languages further underscores the need for principled data construction. Wang et al. (2024) introduced AfriMTE and AfriCOMET, showing that standard automatic metrics such as BLEU correlate weakly with human judgments for African languages, and arguing for evaluation frameworks that better reflect linguistic and cultural realities. Ojo and Ogueji (2023) similarly demonstrated that even commercial large language models perform poorly on African languages, particularly in translation tasks, highlighting that model scale alone cannot compensate for data scarcity and misalignment. AfroBench (Ojo et al., 2025) further reinforces the importance of carefully curated benchmarks in under-resourced settings.
+These findings collectively suggest that both training data and evaluation methodologies must be adapted to the realities of low-resource languages, rather than imported wholesale from high-resource paradigms.
+5. Positioning and Contribution
+While current low-resource NMT research primarily focuses on filtering noise from large web corpora (Junczys-Dowmunt, 2018; Koehn et al., 2019; Ranathunga et al., 2024) or re-scheduling existing data via curriculum learning (Platanios et al., 2019; Zhou et al., 2020), there is little work on the principled construction of training data itself.
+This project challenges the assumption that low-resource datasets must be “collected” through random sampling and instead proposes that they should be “designed” through systematic, linguistically informed construction. We hypothesize that a small, grammatically sequenced corpus can function as a textbook for the model, providing a higher density of learning signal per sentence than randomly sampled data. By reframing data construction as curriculum design, our approach aims to democratize neural machine translation for languages where large-scale data will never exist.
+Bibliography
+Banko, M., & Brill, E. (2001). Scaling to very very large corpora for natural language disambiguation. ACL.
+
+
+Bengio, Y., et al. (2009). Curriculum learning. ICML.
+
+
+Groshan, K., et al. (2025). Is linguistically motivated data augmentation worth it? ACL.
+
+
+Halevy, A., Norvig, P., & Pereira, F. (2009). The unreasonable effectiveness of data. IEEE Intelligent Systems.
+
+
+Jones, A., et al. (2023). GATITOS: Using a new multilingual lexicon for low-resource machine translation. EMNLP.
+
+
+Junczys-Dowmunt, M. (2018). Dual conditional cross-entropy filtering of noisy parallel corpora. WMT.
+
+
+Khayrallah, H., & Koehn, P. (2018). On the impact of various types of noise on neural machine translation. WMT.
+
+
+Koehn, P., et al. (2019). Findings of the WMT 2019 parallel corpus filtering shared task. WMT.
+
+
+Koehn, P., & Knowles, R. (2017). Six challenges for neural machine translation. WMT.
+
+
+NLLB Team. (2022). No language left behind: Scaling human-centered machine translation. Nature.
+
+
+Nielsen, R., et al. (2025). Alligators all around: Lexical confusions in low-resource machine translation. NAACL.
+
+
+Ojo, A., & Ogueji, K. (2023). How good are commercial large language models on African languages? arXiv.
+
+
+Ojo, A., et al. (2025). AfroBench: Benchmarking NLP for African languages. Findings of ACL.
+
+
+Platanios, E. A., et al. (2019). Competence-based curriculum learning for neural machine translation. NAACL.
+
+
+Ranathunga, S., et al. (2024). Improving the quality of web-mined parallel corpora of low-resource languages using debiasing heuristics. ACL.
+
+
+Sutskever, I., et al. (2014). Sequence to sequence learning with neural networks. NeurIPS.
+
+
+Vaswani, A., et al. (2017). Attention is all you need. NeurIPS.
+
+
+Wang, Y., et al. (2024). AfriMTE and AfriCOMET: Enhancing COMET to embrace under-resourced African languages. NAACL.
+
+
+Wu, Y., et al. (2016). Google’s neural machine translation system: Bridging the gap between human and machine translation. arXiv.
+
+
+Zhou, Y., et al. (2020). Curriculum learning by dynamic instance hardness. ACL.

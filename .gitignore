@@ -1,0 +1,32 @@
+# Credentials
+.mcp.json
+.env
+
+# Data files (private — Adja translation data requires community consent)
+*.csv
+*.xlsx
+*.tsv
+*.parquet
+*.pkl
+*.jsonl
+/data/
+experiments/data/splits/
+experiments/data/manifests/
+experiments/preprocessing/data/
+experiments/results/
+
+# Model checkpoints
+*.pt
+*.bin
+*.safetensors
+checkpoint-*/
+
+# Training logs
+wandb/
+runs/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

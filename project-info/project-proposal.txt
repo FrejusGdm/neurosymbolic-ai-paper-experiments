@@ -1,0 +1,33 @@
+Final Project Pitch: Advanced NLP (Winter 2026)
+Josué 
+1. What is Being Done?
+Primary Project: I propose to develop and empirically validate a principled framework for parallel corpus construction in extremely low-resource machine translation (MT). The central research question is: Does the composition and structure of training data matter more than quantity for low-resource neural MT?
+This work draws from my ongoing thesis research on French-Adja translation. Adja (also known as Aja or Aja-Gbe) is a Gbe language spoken by approximately 1,000,000 people (primarily in Benin and Togo), with virtually no digital presence or large-scale NLP resources. In initial experiments, a model trained on 10,000 randomly sampled parallel sentences achieved only BLEU 2–3. However, switching to 5,000 sentences collected via systematic grammatical progression (e.g., starting with basic transitive patterns like "I eat food" → varying subjects/pronouns → tense/aspect changes → vocabulary substitutions) yielded BLEU ≈20—a roughly 10× improvement with half the data.
+The proposed framework formalizes this as linguistically motivated "curriculum-style" corpus design applied at the data-collection stage (rather than during training). It begins with core SVO patterns, systematically varies grammatical elements (pronouns, tense, vocabulary, complexity), and ensures balanced coverage of short/medium/long sentences to promote robust generalization.
+2. How is it Being Done (Methods)?
+Experimental Design: Controlled ablation comparing systematic vs. random data:
+(a) Split existing corpus into matched-size subsets (e.g., 5k and 10k sentences) of systematic vs. random collection.
+(b) Fine-tune identical base models (e.g., NLLB-200 distilled 600M or 1.3B variants, or mT5-small) on each subset.
+(c) Evaluate on a held-out test set covering diverse phenomena.
+(d) Perform ablations to isolate which rules (e.g., pronoun variation, tense introduction) drive gains.
+Framework Formalization: Codify into a reproducible, language-agnostic protocol with explicit steps and example rules (e.g., Rule 1: Core transitive sentences; Rule 2: Subject pronoun variation with fixed verb/object; Rule 3: Tense/aspect layering; Rule 4: Vocabulary expansion within frames). Implement via Python scripts for generation/filtering.
+Baselines: Compare against: (1) pure random sampling, (2) length-stratified sampling, (3) vocabulary-coverage maximization. These represent common alternative curation heuristics.
+3. What Datasets are Needed?
+Primary Dataset: My existing French-Adja parallel corpus, collected via fieldwork in Benin's Kouffo region with community consent
+15,000 sentences (mixed lengths, with metadata distinguishing ~10k random vs. ~5k systematic).
+2 hours transcribed audio (potential for future speech extensions).
+Data Access: Stored locally/secure cloud (e.g., Google Drive); fully owned and ethically collected. No external access needed.
+Generalizability Test: Optionally simulate on another low-resource pair (e.g., subsampled English-Yoruba from OPUS) by applying systematic vs. random criteria to assess transferability. 
+4. How Will the Work be Evaluated?
+Automatic Metrics:
+BLEU and chrF (preferred for morphology-rich languages like Adja).
+COMET for semantic adequacy.
+Bootstrap resampling for statistical significance.
+Targeted Diagnostics: Custom evaluation subsets testing Adja-specific features: noun class agreement, tense-aspect-mood, serial verb constructions, word order flexibility.
+Qualitative: Manual error analysis on ~100 outputs (categorizing lexical, morphological, syntactic failures).
+Ablation: Remove individual rules to quantify impact.
+Success Criteria: Demonstrate (1) statistically significant systematic-data advantage, (2) key contributing rules, (3) reproducible framework applicable to new pairs.
+Target Venues
+This work aligns well with low-resource NLP tracks. Primary targets:
+LoResMT.
+AfricaNLP Workshop (often at ICLR or ACL-affiliated events; 2026 theme emphasizes multilingual multimodal LLMs, fitting extensions). With stronger generalizability results, potential for EMNLP or ACL main conference (or findings papers).
