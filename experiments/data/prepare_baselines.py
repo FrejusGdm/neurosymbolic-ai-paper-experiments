@@ -25,8 +25,32 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def load_parallel_csv(path, src_col="french", tgt_col="adja_translation"):
-    """Load a parallel corpus CSV."""
+    """Load a parallel corpus CSV.
+
+    Auto-detects common column name variants (e.g. 'French' -> 'french',
+    'Translation' -> 'adja_translation') and renames them so downstream
+    code always sees the expected names.
+    """
     df = pd.read_csv(path)
+    aliases = {
+        src_col: ["French", "french", "src", "source"],
+        tgt_col: ["Translation", "adja_translation", "tgt", "target"],
+    }
+    col_map = {}
+    for expected, candidates in aliases.items():
+        if expected in df.columns:
+            continue
+        for alias in candidates:
+            if alias in df.columns:
+                col_map[alias] = expected
+                break
+        else:
+            raise ValueError(
+                f"Column '{expected}' not found in {path}. "
+                f"Columns: {list(df.columns)}"
+            )
+    if col_map:
+        df = df.rename(columns=col_map)
     df = df.dropna(subset=[src_col, tgt_col])
     df = df[df[tgt_col].str.strip() != ""]
     return df

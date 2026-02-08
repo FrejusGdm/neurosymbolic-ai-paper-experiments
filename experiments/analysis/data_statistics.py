@@ -26,8 +26,17 @@ import pandas as pd
 
 
 def load_texts(path, col="french"):
-    """Load text column from CSV."""
+    """Load text column from CSV. Auto-detects common column name variants."""
     df = pd.read_csv(path)
+    if col not in df.columns:
+        for alias in ["French", "french", "src", "source"]:
+            if alias in df.columns:
+                df = df.rename(columns={alias: col})
+                break
+        else:
+            raise ValueError(
+                f"Column '{col}' not found in {path}. Columns: {list(df.columns)}"
+            )
     return df[col].dropna().astype(str).tolist()
 
 

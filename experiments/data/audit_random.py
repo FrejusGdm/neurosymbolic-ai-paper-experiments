@@ -131,6 +131,26 @@ def main():
 
     print(f"Loading {args.input}...")
     df = pd.read_csv(args.input)
+    # Auto-detect column names
+    aliases = {
+        args.src_col: ["French", "french", "src", "source"],
+        args.tgt_col: ["Translation", "adja_translation", "tgt", "target"],
+    }
+    col_map = {}
+    for expected, candidates in aliases.items():
+        if expected in df.columns:
+            continue
+        for alias in candidates:
+            if alias in df.columns:
+                col_map[alias] = expected
+                break
+        else:
+            raise ValueError(
+                f"Column '{expected}' not found in {args.input}. "
+                f"Columns: {list(df.columns)}"
+            )
+    if col_map:
+        df = df.rename(columns=col_map)
     print(f"  Loaded {len(df)} rows")
 
     # Run all checks
