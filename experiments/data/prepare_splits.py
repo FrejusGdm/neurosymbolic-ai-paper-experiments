@@ -14,14 +14,18 @@ This script:
 5. Reports vocabulary overlap statistics
 
 Usage:
+    # With single combined structured CSV:
+    python prepare_splits.py \
+        --structured /path/to/structured_combined.csv \
+        --random /path/to/tatoeba_10k.csv \
+        --output-dir ./splits
+
+    # Or with separate run files:
     python prepare_splits.py \
         --structured-run1 /path/to/run1_combined.csv \
         --structured-run2 /path/to/run2_combined.csv \
         --random /path/to/tatoeba_10k.csv \
-        --output-dir ./splits \
-        --val-ratio 0.1 \
-        --test-ratio 0.1 \
-        --seed 42
+        --output-dir ./splits
 """
 
 import argparse
@@ -333,8 +337,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Prepare 80-10-10 splits with group-aware splitting for structured data"
     )
-    parser.add_argument("--structured-run1", required=True, help="Path to Run-1 structured CSV")
-    parser.add_argument("--structured-run2", required=True, help="Path to Run-2 structured CSV")
+    parser.add_argument("--structured-run1", help="Path to Run-1 structured CSV")
+    parser.add_argument("--structured-run2", help="Path to Run-2 structured CSV")
+    parser.add_argument("--structured", help="Path to single combined structured CSV (alternative to --structured-run1/run2)")
     parser.add_argument("--random", required=True, help="Path to 10K Tatoeba random CSV")
     parser.add_argument("--output-dir", default="./splits", help="Output directory for splits")
     parser.add_argument("--val-ratio", type=float, default=0.1, help="Validation set ratio")
@@ -346,18 +351,28 @@ def main():
 
     np.random.seed(args.seed)
 
+    # Validate structured args
+    if args.structured:
+        if args.structured_run1 or args.structured_run2:
+            parser.error("Use --structured OR (--structured-run1 + --structured-run2), not both")
+    elif not (args.structured_run1 and args.structured_run2):
+        parser.error("Provide either --structured or both --structured-run1 and --structured-run2")
+
     # -----------------------------------------------------------------------
     # Load data
     # -----------------------------------------------------------------------
     print("Loading data...")
-    run1 = load_parallel_csv(args.structured_run1, args.src_col, args.tgt_col)
-    run2 = load_parallel_csv(args.structured_run2, args.src_col, args.tgt_col)
+    if args.structured:
+        structured_df = load_parallel_csv(args.structured, args.src_col, args.tgt_col)
+        print(f"  Structured (combined): {len(structured_df)} sentences")
+    else:
+        run1 = load_parallel_csv(args.structured_run1, args.src_col, args.tgt_col)
+        run2 = load_parallel_csv(args.structured_run2, args.src_col, args.tgt_col)
+        structured_df = pd.concat([run1, run2], ignore_index=True)
+        print(f"  Structured Run-1: {len(run1)} sentences")
+        print(f"  Structured Run-2: {len(run2)} sentences")
+        print(f"  Structured Combined: {len(structured_df)} sentences")
     random_df = load_parallel_csv(args.random, args.src_col, args.tgt_col)
-    structured_df = pd.concat([run1, run2], ignore_index=True)
-
-    print(f"  Structured Run-1: {len(run1)} sentences")
-    print(f"  Structured Run-2: {len(run2)} sentences")
-    print(f"  Structured Combined: {len(structured_df)} sentences")
     print(f"  Random Tatoeba: {len(random_df)} sentences")
 
     # Count base sentence groups

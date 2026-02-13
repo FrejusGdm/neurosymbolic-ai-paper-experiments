@@ -83,15 +83,25 @@ MODULE_MAP = {
     "module3_past": 3,
     "module4_future": 4,
     "module5_questions": 5,
-    # Handle potential variations
     "module5_questions_dedup": 5,
+    # Short forms (e.g. enriched CSV uses "M1", "M2", ...)
+    "m1": 1,
+    "m2": 2,
+    "m3": 3,
+    "m4": 4,
+    "m5": 5,
 }
 
 
 def get_module_number(module_name):
     """Map module column value to module number."""
+    name = str(module_name).lower().strip()
+    # Exact match first (for short forms like "m1")
+    if name in MODULE_MAP:
+        return MODULE_MAP[name]
+    # Substring match (for long forms like "module1_base")
     for key, val in MODULE_MAP.items():
-        if key in str(module_name).lower():
+        if key in name:
             return val
     return None
 
@@ -280,6 +290,14 @@ def main():
 
     print("Loading structured data...")
     df = load_parallel_csv(args.structured, args.src_col, args.tgt_col)
+    # Drop rows with missing pronoun or verb (needed for ablation grouping)
+    n_before = len(df)
+    df = df.dropna(subset=["pronoun", "verb"])
+    df = df[df["pronoun"].str.strip() != ""]
+    df = df[df["verb"].str.strip() != ""]
+    if len(df) < n_before:
+        print(f"  Dropped {n_before - len(df)} rows with missing pronoun/verb")
+    df = df.reset_index(drop=True)
     print(f"  Loaded {len(df)} sentences")
     print(f"  Modules: {df['module'].value_counts().to_dict()}")
     print(f"  Pronouns: {sorted(df['pronoun'].unique().tolist())}")

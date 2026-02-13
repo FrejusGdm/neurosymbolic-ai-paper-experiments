@@ -73,6 +73,15 @@ Five-module curriculum design, each building on Module 1 base sentences:
 - `scripts-from-another-workspace/code-run-{1,2}/` — Two iterations of the generation pipeline
 - `.mcp.json` — MCP server config for NIA and Exa (gitignored, contains API keys)
 
+## HF Jobs Gotchas (learned the hard way)
+
+- **`hf jobs uv run` — script path must be LAST argument**, after all `--flag` and `-e` options. Putting it elsewhere silently breaks.
+- **Stdout is fully buffered in containers.** Add `sys.stdout.reconfigure(line_buffering=True)` at the top of any training script, otherwise `print()` output won't appear in the HF Jobs log viewer until the script exits.
+- **Rate limits:** HF allows 1,000 API calls per 5-min window (free) or 2,500 (PRO). Each `hf jobs uv run` makes ~3-4 API calls (whoami, upload, create). With DELAY=5s between submissions, you'll hit 429 every ~15 jobs. The launcher (`launch_jobs.sh`) has retry logic built in — it waits 65s and retries up to 3 times.
+- **`Seq2SeqTrainer` is fragile across transformers versions.** The custom training loop in `hf_job_train.py` avoids it entirely — uses Adafactor + manual step loop. Don't go back to Trainer.
+- **`as_target_tokenizer()` is deprecated** in transformers 4.44+ but still works. Pin `transformers==4.44.2`. If it breaks in a future version, replace with: set `tokenizer.src_lang = TGT_LANG`, tokenize, then restore `src_lang`.
+- **`aj_Latn` is a custom token** — must call `fix_tokenizer()` + `model.resize_token_embeddings()` every time the model/tokenizer is loaded.
+
 ## Critical Constraints
 
 - **Data is private**: Generated Adja translation data must never be committed. The language community's consent governs data sharing.
