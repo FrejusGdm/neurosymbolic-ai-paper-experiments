@@ -1,0 +1,264 @@
+======================================================================
+LREC Paper — Revision Patches
+Generated for: lrec-dataset-paper/current-draft/draft.txt
+Format: numbered FIND/REPLACE blocks — copy-paste into your editor.
+Patches are in document order.
+======================================================================
+
+----------------------------------------------------------------------
+PATCH 1 — Abstract: fix "Aja" typo and rephrase chrF++ scores
+Addresses: Reviewer #1 (chrF++ wording), consistency ("Aja" → "Adja")
+----------------------------------------------------------------------
+
+FIND:
+  achieving chrF++=25 in the French→Aja direction, and up to chrF++=31 in the Aja→French direction.
+
+REPLACE WITH:
+  achieving a chrF++ of 25 in the French→Adja direction, and up to a chrF++ of 31 in the Adja→French direction.
+
+----------------------------------------------------------------------
+PATCH 2 — Abstract: remove duplicate sentence + clean up data-release line
+Addresses: Reviewer #1 (redundancy), Reviewer #2 (data availability)
+----------------------------------------------------------------------
+
+FIND:
+  This work represents the first public machine translation resource for Adja. It provides benchmarks for future studies on this under-resourced West African language, and will enable future research on Adja language technologies. The corpus is publicly released to enable future research on Adja language technologies at this [GITHUB URL].
+
+REPLACE WITH:
+  This work represents the first public machine translation resource for Adja. It provides benchmarks for future studies on this under-resourced West African language. The dataset and fine-tuned models are publicly available at \url{[GITHUB URL]}.
+
+----------------------------------------------------------------------
+PATCH 3 — Introduction: remove trailing period from first \item
+Addresses: Reviewer #1 (punctuation inconsistency in bullet list)
+----------------------------------------------------------------------
+
+FIND:
+  \item We present the first French-Adja parallel corpus containing 10,000 sentence pairs, establishing a foundation for computational work on Adja.
+
+REPLACE WITH:
+  \item We present the first French-Adja parallel corpus containing 10,000 sentence pairs, establishing a foundation for computational work on Adja
+
+----------------------------------------------------------------------
+PATCH 4 — Section 3.1: add \cite{tatoeba} at first Tatoeba mention
+Addresses: Reviewer #2 (missing citation)
+----------------------------------------------------------------------
+
+FIND:
+  We selected 10,000 French sentences from Tatoeba\footnote{https://tatoeba.org},
+
+REPLACE WITH:
+  We selected 10,000 French sentences from Tatoeba~\cite{tatoeba}\footnote{https://tatoeba.org},
+
+----------------------------------------------------------------------
+PATCH 5 — Section 3.1: add sentence-sampling explanation
+Addresses: Reviewer #2 (how were sentences selected from Tatoeba?)
+----------------------------------------------------------------------
+
+FIND:
+  While Tatoeba provides diverse sentence structures and vocabulary, the sentences are not domain-specific,
+
+REPLACE WITH:
+  Sentences were selected through uniform random sampling from the full set of available French-language entries on the platform, without filtering by topic, length, or domain. While Tatoeba provides diverse sentence structures and vocabulary, the sentences are not domain-specific,
+
+----------------------------------------------------------------------
+PATCH 6 — Section 3.1: expand preprocessing description (IMPORTANT)
+Addresses: Reviewer #2 (vague bullet list — needs concrete pipeline steps)
+Note: replace the entire "Data Processing and Quality Control" block,
+      from the \textbf{...} heading through the translators paragraph.
+----------------------------------------------------------------------
+
+FIND (entire block to replace):
+  \textbf{Data Processing and Quality Control.} Following digitization, we performed several quality control steps:
+\begin{enumerate}
+    \item Verification of encoding consistency for Adja text
+    \item Review of digitized translations for transcription errors
+    \item Standardization of punctuation and formatting
+\end{enumerate}
+
+The use of two independent translators working from the same source material provided implicit quality validation, as both translators shared a common linguistic baseline and produced consistent translations.
+
+REPLACE WITH:
+  \textbf{Data Processing and Quality Control.} Following digitization, sentence pairs were processed through a dedicated cleaning pipeline to standardize encoding, normalize spacing, and ensure punctuation consistency between the French source and Adja target. The pipeline applied the following steps in order:
+
+\begin{enumerate}
+    \item \textbf{Unicode normalization (NFKC).} All text was normalized to NFKC form, resolving encoding inconsistencies such as composed vs.\ decomposed diacritics that arise when typing Adja characters on different keyboards.
+    \item \textbf{Spacing normalization.} Double spaces were collapsed; spaces before sentence-final punctuation (\texttt{.} \texttt{,} \texttt{!} \texttt{?} \texttt{;} \texttt{:}) were removed.
+    \item \textbf{Non-standard character normalization.} The Latin retroflex click \texttt{ǃ} (Unicode U+01C3), occasionally introduced by keyboards as a visually similar substitute, was replaced with standard ASCII \texttt{!}.
+    \item \textbf{Bidirectional punctuation consistency.} For each pair, sentence-final punctuation was checked in both directions: if the French sentence ends with \texttt{?} or \texttt{!}, the Adja sentence is required to match; mismatches detectable from interrogative function words are corrected automatically, and ambiguous cases are flagged for human review.
+    \item \textbf{Quotation mark matching.} If the French sentence contains guillemets (\texttt{«~»}) or standard double quotes, matching quotation marks are added to the Adja sentence.
+\end{enumerate}
+
+The use of two independent translators working from the same source material provided implicit quality validation, as both translators shared a common linguistic baseline and produced consistent translations. The cleaned corpus is referred to as the v2-normalized dataset and is used in all experiments reported in this paper.
+
+----------------------------------------------------------------------
+PATCH 7 — Section 3.2: explain both random and stratified splits
+Addresses: Reviewer #1 (how were splits created? what is stratification?)
+Note: replace the single sentence about random sampling with a full paragraph,
+      and add the stratified split statistics table.
+----------------------------------------------------------------------
+
+FIND:
+  The splits were created through random sampling to ensure similar distributions across sets. The test set is held out for final evaluation and will serve as a standardized benchmark for future Adja MT research.
+
+REPLACE WITH:
+  We create two complementary splits from the same 10,000 sentence pairs.
+
+\textbf{Random split.} Pairs are shuffled uniformly at random (seed 42) and sliced 80/10/10, yielding 8,000 train / 1,000 dev / 1,000 test pairs.
+
+\textbf{Length-stratified split.} To ensure train, dev, and test sets share the same sentence-length distribution, we first bin all pairs by the length of the French source sentence: \textit{short} ($\leq$8 words), \textit{medium} (9--16 words), and \textit{long} ($>$16 words). We then sample 80/10/10 proportionally within each bin and concatenate the results, yielding 7,999 train / 999 dev / 1,002 test pairs. Table~\ref{tab:splits} reports the resulting distributions.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Split} & \textbf{Total} & \textbf{Short} & \textbf{Medium} & \textbf{Long} \\
+               &                & ($\leq$8)      & (9--16)         & ($>$16)       \\
+\midrule
+Train & 7,999 & 6,456 & 1,481 & 62 \\
+Dev   &   999 &   807 &   185 &  7 \\
+Test  & 1,002 &   807 &   186 &  9 \\
+\bottomrule
+\end{tabular}
+\caption{Sentence count by length stratum for the stratified split. All three sets share a mean French source length of 6.4 words.}
+\label{tab:splits}
+\end{table}
+
+Reporting results on both splits allows us to assess whether length distribution in the test set affects evaluation scores. The test sets are held out for final evaluation and will serve as standardized benchmarks for future Adja MT research.
+
+----------------------------------------------------------------------
+PATCH 8 — Section 3.3: soften "ensures" → "suggests" in diversity claim
+Addresses: Reviewer #1 (unsubstantiated strong claim)
+----------------------------------------------------------------------
+
+FIND:
+  This distribution ensures exposure to diverse syntactic
+structures while avoiding the data sparsity issues associated with
+very long sentences in low-resource contexts.
+
+REPLACE WITH:
+  This distribution suggests exposure to a variety of syntactic structures, from simple clausal constructions in short sentences to more complex sentences with subordination and modification, while avoiding the data sparsity issues associated with very long sentences in low-resource contexts.
+
+----------------------------------------------------------------------
+PATCH 9 — Section 4.1: update model specs, add mBART, fix missing period
+Addresses: Reviewer #3 (NLLB model size unspecified; missing period; add mBART)
+----------------------------------------------------------------------
+
+FIND (entire Models subsection body):
+  We establish baseline results using two state-of-the-art approaches:
+
+\textbf{NLLB-200} \cite{nllbteam2022languageleftbehindscaling}: We fine-tune the NLLB-200 distilled model, initialized from Fon and Aja checkpoints (closely related Gbe languages), leveraging linguistic similarities for improved transfer learning. We select the checkpoint at 2,000 training steps based on validation loss, as continued training led to overfitting
+
+\textbf{ByT5} \cite{xue2022byt5tokenfreefuturepretrained}: We fine-tune ByT5-Large, a byte-level model that does not require language-specific tokenization, making it suitable for under-resourced languages.
+
+%The hyperparameters for each model are described in appendixes \ref{nllb-hyperparams} and \ref{byt5-hyperparams}. The results of the translation test were evaluated using BLEU \cite{papineni2002bleu} and chrF++ \cite{popovic-2015-chrf}.
+
+NLLB models were trained for 30000 steps; ByT5 models for 1750 steps. The results of the translation test were evaluated using BLEU \cite{papineni2002bleu} and chrF++ \cite{popovic-2017-chrf}.
+
+REPLACE WITH:
+  We establish baseline results using three state-of-the-art approaches:
+
+\textbf{NLLB-200} \cite{nllbteam2022languageleftbehindscaling}: We fine-tune the \texttt{nllb-200-distilled-600M} model, initialized from the Ewe (\texttt{ewe\_Latn}) language token as a proxy for Adja, leveraging cross-lingual transfer from the closest available Gbe language. We apply early stopping on chrF (patience 10 evaluations) to prevent overfitting.
+
+\textbf{mBART-50} \cite{liu2020multilingualdenoisingpretrainingneural}: We fine-tune \texttt{mbart-large-50-many-to-many-mmt}, initializing from the French (\texttt{fr\_XX}) source-language embedding as a starting point for the Adja target. We register a new \texttt{aj\_Latn} language token and resize the token embeddings accordingly.
+
+\textbf{ByT5} \cite{xue2022byt5tokenfreefuturepretrained}: We fine-tune \texttt{byt5-base}, a byte-level model that requires no language-specific tokenization, making it well-suited for a language with limited preprocessing resources.
+
+All three models are optimized with Adafactor (learning rate $1\times10^{-4}$, no relative step), batch size 16, and early stopping on validation chrF with patience 10. We train for up to 50 epochs per model. We run each configuration with 5 random seeds (42, 123, 456, 789, 1024) and report mean $\pm$ standard deviation. Results on both the random and length-stratified splits are reported. Evaluation uses BLEU \cite{papineni2002bleu} and chrF++ \cite{popovic-2017-chrf}.
+
+----------------------------------------------------------------------
+PATCH 10 — Section 4.2: update results table to include mBART + 5-seed format
+Addresses: Reviewer #3 (add mBART; report variance across seeds)
+Note: [PENDING] = values to fill in once HPC jobs complete.
+      Also update the \caption to clarify reporting format.
+----------------------------------------------------------------------
+
+FIND (entire tabular environment):
+\begin{tabular}{lcccc}
+\toprule
+\multirow{}{}{\textbf{}} & \multicolumn{2}{c}{\textbf{FR→ADJ}} & \multicolumn{2}{c}{\textbf{ADJ→FR}} \\
+\cmidrule{} \cmidrule{}
+& BLEU & chrF++ & BLEU & chrF++ \\
+\midrule
+NLLB (Fon) & 3.69 & 25.06 & 0.83 & 13.74 \\
+NLLB (Ewe) & 3.67 & 25.75 & 0.48 & 13.97 \\
+ByT5 & 3.14 & 25.64 & 11.60 & 31.95 \\
+\bottomrule
+\end{tabular}
+\caption{Baseline MT results on the test set. Models selected via validation loss (Fon: 2K steps, Ewe: 3K steps).}
+\label{tab:results}
+
+REPLACE WITH:
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Split} & \multicolumn{2}{c}{\textbf{FR→ADJ}} & \multicolumn{2}{c}{\textbf{ADJ→FR}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+& & BLEU & chrF++ & BLEU & chrF++ \\
+\midrule
+NLLB-600M & random     & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+          & stratified & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+\addlinespace
+mBART-50  & random     & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+          & stratified & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+\addlinespace
+ByT5-base & random     & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+          & stratified & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+\bottomrule
+\end{tabular}
+\caption{Baseline MT results on the random and length-stratified test sets (mean over 5 seeds: 42, 123, 456, 789, 1024). Best results per direction in \textbf{bold}.}
+\label{tab:results}
+
+----------------------------------------------------------------------
+PATCH 11 — Limitations: add data contamination paragraph
+Addresses: Reviewer #2 (is there Tatoeba overlap in NLLB training?)
+Note: insert BEFORE the existing \textbf{Source Data Quality.} paragraph.
+----------------------------------------------------------------------
+
+INSERT BEFORE:
+  \textbf{Source Data Quality.} Our French sentences originate from Tatoeba,
+
+INSERT THIS NEW PARAGRAPH:
+  \textbf{Potential Data Overlap.} NLLB-200 was pre-trained on a large multilingual corpus that includes Tatoeba data for many language pairs. However, since no Adja-language data existed in any public corpus at the time of NLLB's training, our Adja test references are not present in NLLB's training data. The French source sentences may appear in NLLB pre-training data (in French--English or other pairs), but this does not constitute target-side contamination for the French→Adja evaluation direction. ByT5 was pre-trained on mC4 (multilingual CommonCrawl), which similarly contains no Adja data. We therefore consider the risk of meaningful data contamination to be negligible.
+
+----------------------------------------------------------------------
+PATCH 12 — Limitations: add translationese effects paragraph
+Addresses: Reviewer #3 (Adja side is translationese — acknowledge this)
+Note: insert AFTER the \textbf{Corpus Size.} paragraph.
+----------------------------------------------------------------------
+
+INSERT AFTER:
+  Despite these limitations, this corpus establishes a critical baseline.
+
+INSERT THIS NEW PARAGRAPH (before that line):
+  \textbf{Translationese Effects.} Our corpus was constructed by translating French source sentences into Adja. Consequently, the Adja side of the corpus is translationese — Adja produced in response to French originals rather than naturally generated Adja text. This has two implications: (1) evaluation of the Adja→French direction measures translation of translationese, which may inflate scores compared to translating naturally spoken or written Adja; (2) the Adja text may exhibit calque structures or French-influenced syntax not typical of naturally produced Adja speech. Future work starting from Adja source material (e.g., oral corpora or recorded speech) would complement this resource.
+
+----------------------------------------------------------------------
+PATCH 13 — Data Availability: update to full public release
+Addresses: Reviewer #2 (dataset should be publicly available, not by request)
+----------------------------------------------------------------------
+
+FIND:
+  \textbf{Data Availability.} We release our fine-tuned models on HuggingFace at [ANONYMOUS URL]. The dataset is available by request to ensure respectful use of this under-resourced language.
+
+REPLACE WITH:
+  \textbf{Data Availability.} The dataset and fine-tuned models are publicly available on GitHub at \url{[GITHUB URL]} and on Hugging Face at \url{[HF URL]} under a non-commercial license to protect against exploitative use while enabling academic research.
+
+----------------------------------------------------------------------
+PATCH 13b — Abstract: update data-release line to match (see PATCH 2)
+Already handled in PATCH 2 above.
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+VERIFICATION CHECKLIST (run after applying all patches)
+----------------------------------------------------------------------
+[ ] "chrF++" appears consistently throughout (no bare "chrF" without ++)
+[ ] "Adja" spelled correctly everywhere (not "Aja" — check Table 2 header: ADJ→FR is correct abbreviation)
+[ ] \cite{tatoeba} added in Section 3.1 (PATCH 4)
+[ ] New Table~\ref{tab:splits} compiles without error
+[ ] Updated Table~\ref{tab:results} has 6 rows × 2 directions + correct \cmidrule(lr) syntax
+[ ] New \textbf{Data Availability.} in Section 5 matches abstract claim (both say "publicly available")
+[ ] \url{[GITHUB URL]} and \url{[HF URL]} placeholders updated before submission
+[ ] mBART citation \cite{liu2020multilingualdenoisingpretrainingneural} is in bibliography
+[ ] Check no unclosed braces introduced by Patch 9 (count { and })
+[ ] Confirm \addlinespace is available (needs \usepackage{booktabs})
+======================================================================

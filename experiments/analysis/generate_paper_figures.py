@@ -487,6 +487,127 @@ def fig7_exp1_overview(df):
     print("  [OK] Fig 7: Exp1 overview bar chart")
 
 
+# ── Heatmap: (Random × Structured → BLEU) ────────────────────────────────────
+
+def fig_heatmap_composition(df):
+    """Heatmap showing BLEU as a function of random and structured data amounts.
+
+    Data points come from:
+      - exp2/STRUCTURED-{200..4000}: structured-only (random=0)
+      - exp2/RANDOM-{200..10000}: random-only (structured=0)
+      - exp2/REPLACE-R*_S*: replacement diagonal (random+structured=10K)
+      - exp2/RANDOM-6K_STRUCTURED-{500..4000}: additive (random=6K)
+      - exp1/RANDOM-10K_STRUCTURED-4K: (10K, 4K)
+      - exp1/STRUCTURED-4K-ONLY: (0, 4K)
+      - exp1/STRUCTURED-2K: (0, 2K)
+      - exp1/RANDOM-4K: (4K, 0)
+      - exp1/RANDOM-10K: (10K, 0)
+      - exp1/RANDOM-6K_STRUCTURED-4K: (6K, 4K)
+    """
+    points = []  # list of (random_amt, structured_amt, bleu_mean)
+
+    # Helper: collect a single cell from any experiment/condition
+    def _add(sub_df, r_amt, s_amt):
+        if not sub_df.empty:
+            points.append((r_amt, s_amt, sub_df["test_bleu"].mean()))
+
+    exp1 = df[df["experiment"] == "exp1"]
+    exp2 = df[df["experiment"] == "exp2"]
+
+    # Structured-only from exp2
+    for size in [200, 500, 1000, 2000, 3000, 4000]:
+        _add(exp2[exp2["condition"] == f"STRUCTURED-{size}"], 0, size)
+
+    # Random-only from exp2
+    for size in [200, 500, 1000, 2000, 4000, 6000, 8000, 10000]:
+        _add(exp2[exp2["condition"] == f"RANDOM-{size}"], size, 0)
+
+    # Replacement diagonal from exp2 (total = 10K)
+    for s_size in [500, 1000, 2000, 4000]:
+        r_size = 10000 - s_size
+        _add(exp2[exp2["condition"] == f"REPLACE-R{r_size}_S{s_size}"], r_size, s_size)
+
+    # Additive from exp2 (6K random base)
+    for s_size in [500, 1000, 2000, 4000]:
+        _add(exp2[exp2["condition"] == f"RANDOM-6K_STRUCTURED-{s_size}"], 6000, s_size)
+
+    # From exp1
+    _add(exp1[exp1["condition"] == "RANDOM-4K"], 4000, 0)
+    _add(exp1[exp1["condition"] == "RANDOM-10K"], 10000, 0)
+    _add(exp1[exp1["condition"] == "STRUCTURED-2K"], 0, 2000)
+    _add(exp1[exp1["condition"] == "STRUCTURED-4K-ONLY"], 0, 4000)
+    _add(exp1[exp1["condition"] == "RANDOM-6K_STRUCTURED-4K"], 6000, 4000)
+    _add(exp1[exp1["condition"] == "RANDOM-10K_STRUCTURED-4K"], 10000, 4000)
+
+    if not points:
+        print("  [SKIP] Heatmap: No composition data found")
+        return
+
+    # De-duplicate by (random, structured) — take max BLEU if multiple sources
+    pts_df = pd.DataFrame(points, columns=["random", "structured", "bleu"])
+    pts_df = pts_df.groupby(["random", "structured"])["bleu"].max().reset_index()
+
+    # ── Build grid ──
+    r_vals = sorted(pts_df["random"].unique())
+    s_vals = sorted(pts_df["structured"].unique())
+
+    grid = np.full((len(s_vals), len(r_vals)), np.nan)
+    r_idx = {v: i for i, v in enumerate(r_vals)}
+    s_idx = {v: i for i, v in enumerate(s_vals)}
+
+    for _, row in pts_df.iterrows():
+        grid[s_idx[row["structured"]], r_idx[row["random"]]] = row["bleu"]
+
+    # ── Plot ──
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    cmap = plt.cm.YlOrRd.copy()
+    cmap.set_bad(color="#f0f0f0")  # gray for empty cells
+
+    im = ax.imshow(grid, cmap=cmap, aspect="auto", origin="lower",
+                   vmin=0, vmax=max(pts_df["bleu"].max(), 25))
+
+    # Axis labels
+    r_labels = [f"{int(v/1000)}K" if v >= 1000 else str(int(v)) for v in r_vals]
+    s_labels = [f"{int(v/1000)}K" if v >= 1000 else str(int(v)) for v in s_vals]
+    ax.set_xticks(range(len(r_vals)))
+    ax.set_xticklabels(r_labels, fontsize=9)
+    ax.set_yticks(range(len(s_vals)))
+    ax.set_yticklabels(s_labels, fontsize=9)
+    ax.set_xlabel("Random Sentences")
+    ax.set_ylabel("Structured Sentences")
+    ax.set_title("BLEU by Data Composition")
+
+    # Annotate cells with values
+    best_bleu = pts_df["bleu"].max()
+    for _, row in pts_df.iterrows():
+        ri = r_idx[row["random"]]
+        si = s_idx[row["structured"]]
+        bleu = row["bleu"]
+        # White text on dark cells, black on light
+        text_color = "white" if bleu > best_bleu * 0.65 else "black"
+        fontweight = "bold" if bleu == best_bleu else "normal"
+        ax.text(ri, si, f"{bleu:.1f}", ha="center", va="center",
+                fontsize=8, color=text_color, fontweight=fontweight)
+
+    # Colorbar
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
+    cbar.set_label("BLEU", fontsize=10)
+
+    # Mark the optimal cell
+    best_row = pts_df.loc[pts_df["bleu"].idxmax()]
+    ri = r_idx[best_row["random"]]
+    si = s_idx[best_row["structured"]]
+    ax.plot(ri, si, "s", markersize=20, markeredgecolor=COLORS["accent"],
+            markerfacecolor="none", markeredgewidth=2.5)
+
+    plt.tight_layout()
+    for fmt in ["pdf", "png"]:
+        fig.savefig(os.path.join(OUT_DIR, f"fig_heatmap_composition.{fmt}"))
+    plt.close(fig)
+    print("  [OK] Heatmap: Data composition (Random × Structured → BLEU)")
+
+
 # ── Figure 8: Baselines comparison ──────────────────────────────────────────
 
 def fig8_baselines(df):
@@ -579,6 +700,7 @@ def main():
     fig6_additive_curve(df)
     fig7_exp1_overview(df)
     fig8_baselines(df)
+    fig_heatmap_composition(df)
 
     print(f"\nAll figures saved to {OUT_DIR}/")
     print("Formats: .pdf (for paper) + .png (for preview)")

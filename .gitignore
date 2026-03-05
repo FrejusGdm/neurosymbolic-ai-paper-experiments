@@ -13,6 +13,8 @@
 experiments/data/splits/
 experiments/data/manifests/
 experiments/preprocessing/data/
+lrec-dataset-paper/data/splits/
+lrec-dataset-paper/data/splits.zip
 experiments/results/
 
 # Model checkpoints
@@ -25,6 +27,11 @@ checkpoint-*/
 wandb/
 runs/
 logs/
+*.log
+
+# Stray unzip artifacts / space-named folder
+" /"
+split_stats.txt
 
 # Python
 __pycache__/
