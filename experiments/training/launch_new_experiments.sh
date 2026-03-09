@@ -140,14 +140,37 @@ tier_table9() {
 }
 
 # ============================================================================
+# Tier: Baselines-rerun — Decontaminated standalone baselines (15 jobs)
+# ============================================================================
+tier_baselines_rerun() {
+    echo ""
+    echo "=========================================="
+    echo "BASELINES RERUN — decontaminated (15 jobs)"
+    echo "=========================================="
+    echo "NOTE: Run decontaminate_splits.py first, then re-upload baseline data."
+
+    local conditions=("TF-IDF-DIVERSE" "LENGTH-STRATIFIED" "VOCAB-MAXIMIZED")
+    local seeds=(42 123 456 789 2024)
+
+    for cond in "${conditions[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "baselines" "$cond" "$seed" "t4-small" "$MODEL_600M" "3h"
+        done
+    done
+
+    echo "Done. After jobs complete, update tab:baselines in acl_latex.tex."
+}
+
+# ============================================================================
 # Main dispatch
 # ============================================================================
 TIER="${1:-all}"
 
 case "$TIER" in
-    fix)       tier_fix ;;
-    additive)  tier_additive ;;
-    table9)    tier_table9 ;;
+    fix)              tier_fix ;;
+    additive)         tier_additive ;;
+    table9)           tier_table9 ;;
+    baselines-rerun)  tier_baselines_rerun ;;
     all)
         tier_fix
         echo ""
@@ -155,7 +178,7 @@ case "$TIER" in
         ;;
     *)
         echo "Unknown tier: $TIER"
-        echo "Usage: $0 [fix|additive|table9|all]"
+        echo "Usage: $0 [fix|additive|table9|baselines-rerun|all]"
         exit 1
         ;;
 esac

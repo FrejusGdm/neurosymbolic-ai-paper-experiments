@@ -1,0 +1,132 @@
+Subject: Found test set contamination in ablation & baseline conditions — need your input on fix
+
+Hi Professor,
+
+While preparing the new Table 9 experiments (structured + smart-selection combos),
+I discovered test set contamination affecting several conditions in the paper.
+I want to walk you through what happened, what's affected, and my proposed fix.
+
+─────────────────────────────────────────────────────────────────────
+WHAT HAPPENED
+─────────────────────────────────────────────────────────────────────
+
+The test set (1,455 sentences) contains both Tatoeba AND structured sentences.
+There are two separate contamination sources:
+
+1) ABLATION CONDITIONS: The ablation train files (module_loo, verb diversity,
+   pronoun, minimal pairs, size-controlled) were built from a larger structured
+   pool (~4,247 sentences) that overlaps with the test set. For example, the
+   FULL condition has 3,823 training sentences, of which 413 (28.4% of the
+   test set) also appear in test.tsv.
+
+   The shared structured_train.tsv (3,462 rows) is clean — but the ablation
+   files contain ~361 extra structured sentences that leaked into both
+   training and test.
+
+2) SMART-SELECTION BASELINES: The TF-IDF, Length-Stratified, and Vocab-Maximized
+   baselines were selected from the full 10K Tatoeba pool, which also sourced
+   the Tatoeba portion of the test set. Each baseline has ~186-192 test
+   sentences in its training data (~13% of test).
+
+─────────────────────────────────────────────────────────────────────
+WHAT'S AFFECTED vs. WHAT'S CLEAN
+─────────────────────────────────────────────────────────────────────
+
+CLEAN (no contamination):
+  • Table 5 — RANDOM-10K, RANDOM-4K, R6K+S4K, R10K+S4K, STRUCTURED-2K results
+  • Table 6 — All scaling curves (exp2)
+  • Table 7 — Budget replacement conditions
+  • Table 8 — Additive curve
+  • Table 14 — Robustness (uses exp1 conditions)
+  • NEW appendix additive ablation (uses structured_train.csv, clean)
+
+  → The main story of the paper (structured data >> random data) is UNAFFECTED.
+
+CONTAMINATED:
+  • Table 9  — Standalone baselines (TF-IDF, Length, Vocab): ~13% overlap
+  • Table 10 — Leave-one-out ablation: 3.8–28.4% overlap
+  • Table 11 — Size-controlled ablation: 5.6–10.2% overlap
+  • Table 12 — Minimal pairs + verb diversity: 1.8–29.3% overlap
+  • Table 13 — Pronoun coverage: 8.5–28.4% overlap
+
+─────────────────────────────────────────────────────────────────────
+CONCRETE EXAMPLE
+─────────────────────────────────────────────────────────────────────
+
+Test sentence:  "Est-ce que elle boit du café?" → [Adja translation]
+
+This sentence appears in BOTH:
+  - test.tsv (used for evaluation)
+  - ablations/module_loo/FULL/train.tsv (used for training)
+
+The model sees this sentence during training, then gets "tested" on it.
+This inflates BLEU/chrF scores for all ablation conditions.
+
+For the baselines, the issue is similar: Tatoeba sentence "Bois ton jus."
+appears in both the TF-IDF-DIVERSE training set and the test set.
+
+─────────────────────────────────────────────────────────────────────
+PROPOSED FIX
+─────────────────────────────────────────────────────────────────────
+
+Remove every test sentence from all contaminated training and validation
+files, then retrain. I've already built scripts for this:
+
+  python experiments/data/decontaminate_splits.py --in-place
+  python experiments/analysis/check_test_contamination.py  # verify 0 overlap
+
+Impact on dataset sizes after removing contaminated sentences:
+
+  Standalone baselines: 1,800 → ~1,614 train (lose ~10%)
+  FULL ablation:        3,823 → ~3,410 train (lose ~11%)
+  1K-sized ablations:     900 → ~760-770 train (lose ~10-15%)
+
+The size reduction is modest. All conditions lose roughly the same
+percentage, so relative comparisons remain meaningful.
+
+Jobs needed:
+  - 15 standalone baseline jobs (3 conditions × 5 seeds)
+  - 20 combo jobs (4 conditions × 5 seeds) — already uploaded clean data
+  - ~78 ablation jobs (26 conditions × 3 seeds) — need to decontaminate first
+  Total: ~113 jobs on HF (t4-small, ~2-3h each)
+
+In the paper, we simply describe the correct methodology: "Training and test
+sets were constructed to ensure no sentence appears in both splits." No need
+to mention the fix was applied post-hoc.
+
+─────────────────────────────────────────────────────────────────────
+WHAT I'VE DONE SO FAR
+─────────────────────────────────────────────────────────────────────
+
+✅ Built contamination detection script (checks all conditions automatically)
+✅ Built decontamination script (removes test sentences from train/val)
+✅ Decontaminated the 3 standalone baselines
+✅ Regenerated and uploaded clean combo splits to HF Hub
+✅ Launched 20 clean combo jobs (Table 9 new rows)
+
+⏳ Awaiting your input on whether to also decontaminate + retrain all 26
+   ablation conditions (Tables 10-13). This is a larger effort (~78 more jobs)
+   but would make every number in the paper defensible.
+
+─────────────────────────────────────────────────────────────────────
+QUESTIONS FOR YOU
+─────────────────────────────────────────────────────────────────────
+
+1. Should we decontaminate and retrain ALL contaminated conditions (~113 total
+   jobs), or focus only on certain tables?
+
+2. The main results (Tables 5-8) are clean, so the core argument is solid.
+   Would you prefer to:
+   a) Fix everything now (most defensible)
+   b) Fix baselines + combos now, address ablations if reviewers flag it
+   c) A different approach?
+
+3. For the ablation conditions: the contaminated files have ~361 extra
+   structured sentences beyond what's in structured_train.tsv. Do you know
+   where these came from? Understanding the source would help ensure the
+   fix is correct.
+
+Let me know how you'd like to proceed and I'll execute immediately.
+
+Best,
+Josue

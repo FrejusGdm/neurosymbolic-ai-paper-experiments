@@ -1,0 +1,124 @@
+# Test Set Contamination Audit — 2026-03-09
+# Run: python experiments/analysis/check_test_contamination.py
+
+## The Problem
+
+The test set (1,455 sentences in experiments/data/splits/shared/test.tsv) contains
+BOTH Tatoeba AND structured sentences. Two separate contamination sources:
+
+1. **Structured sentences in test set**: The ablation conditions (module_loo,
+   module_size_ctrl, verb, pronoun, minimal_pairs) were created from a larger
+   structured dataset (~4,247 sentences) that was NOT properly split against
+   the test set. The shared structured_train.tsv (3,462 rows) is clean, but
+   the ablation train.tsv files (e.g., FULL = 3,823 rows) contain 361 extra
+   structured sentences that also appear in the test set.
+
+2. **Tatoeba sentences in baselines**: The smart-selection baselines (TF-IDF,
+   Length, Vocab) were selected from the full 10K Tatoeba pool, which also
+   sourced the Tatoeba portion of the test set.
+
+## Impact by Table
+
+### AFFECTED (need retraining after decontamination):
+- Table 9  (tab:baselines)        — TF-IDF, Length, Vocab: ~13% overlap each
+- Table 10 (tab:module_loo)       — ALL conditions: 3.8–28.4% overlap
+- Table 11 (tab:module_size_ctrl) — ALL conditions: 5.6–10.2% overlap
+- Table 12 (tab:structure_matters)— Pairs + verb diversity: 1.8–29.3% overlap
+- Table 13 (tab:pronoun)          — ALL conditions: 8.5–28.4% overlap
+
+### NOT AFFECTED (clean):
+- Table 5 (tab:exp1_results) — RANDOM-*, RANDOM+STRUCT conditions (proper split)
+- Table 6 (tab:scaling)      — exp2 scaling curves (proper split)
+- Table 7 (tab:replacement)  — replacement conditions (proper split)
+- Table 8 (tab:additive)     — additive curve (from exp2, proper split)
+- Appendix additive ablation — uses structured_train.csv (clean)
+- Table 14 (tab:robustness)  — uses exp1 conditions (clean)
+
+## Detailed Overlap Counts
+
+### Baselines (Tatoeba contamination — NOW DECONTAMINATED):
+Condition               Before  Removed  After   % lost
+TF-IDF-DIVERSE          1800    186      1614    10.3%
+LENGTH-STRATIFIED       1800    192      1608    10.7%
+VOCAB-MAXIMIZED         1800    186      1614    10.3%
+
+### Combo conditions (NOW DECONTAMINATED + regenerated):
+STRUCT4K-TFIDF2K        5076    →4568 train (clean, regenerated from clean baselines)
+STRUCT4K-LENGTH2K       5070    →4563 train (clean)
+STRUCT4K-VOCAB2K        5076    →4568 train (clean)
+STRUCT4K-ALL-BASELINES  7405    →6664 train (clean)
+
+### Ablation conditions (structured contamination — NOT YET FIXED):
+Condition                    Train  Overlap  % of test
+FULL (= PAIRS-INTACT = ALL-8 = 10-VERBS)
+                              3823    413     28.4%
+NO-QUESTIONS                  3240    345     23.7%
+NO-PAST                       3010    322     22.1%
+NO-FUTURE                     3009    317     21.8%
+NO-NEGATION                   3024    311     21.4%
+PAIRS-BROKEN                  3823    426     29.3%
+BASE-ONLY                      815     55      3.8%
+FULL-1K                        900    141      9.7%
+NO-QUEST-1K                    900    149     10.2%
+NO-PAST-1K                    900    139      9.6%
+NO-FUT-1K                      900    137      9.4%
+NO-NEG-1K                      900    131      9.0%
+BASE-1K                        815     81      5.6%
+
+## Root Cause Analysis
+
+The ablation splits in experiments/data/splits/ablations/ were generated from
+a DIFFERENT source than experiments/data/splits/shared/structured_train.tsv.
+
+- structured_train.tsv: 3,462 sentences (CLEAN — proper train split)
+- structured_train.csv: 3,462 sentences (same, with metadata)
+- ablation FULL/train.tsv: 3,823 sentences (CONTAMINATED — 361 extra sentences
+  that are also in test.tsv)
+
+The 361 extra sentences in the ablation files appear to be structured sentences
+that should have been held out for testing but were included in the ablation
+training files.
+
+## Fix Options (DISCUSS WITH PROFESSOR)
+
+### Option A: Decontaminate ablation splits + retrain everything
+- Remove test sentences from ALL ablation train/val files
+- Regenerate combo splits from clean sources
+- Retrain ALL contaminated conditions (~26 conditions × 2-5 seeds = ~80-130 jobs)
+- Pro: Cleanest fix, all numbers trustworthy
+- Con: Many jobs to rerun, delays paper
+
+### Option B: Use only the clean test subset for evaluation
+- Keep existing models but re-evaluate using only the non-contaminated test sentences
+- Test set shrinks from 1,455 to ~1,042 (removing structured test sentences)
+- Pro: No retraining needed, just re-evaluation
+- Con: Smaller test set, methodologically weaker
+
+### Option C: Create a new held-out test set
+- Split structured_train.csv properly: hold out 10% as test
+- Create new Tatoeba test set excluding all baseline training sentences
+- Retrain everything against the new test set
+- Pro: Correct methodology from scratch
+- Con: Most work, but most defensible
+
+### Option D: Decontaminate + retrain only the worst offenders
+- Focus on conditions with >10% overlap (most of the ablations)
+- Accept minor contamination in conditions with <5% overlap
+- Pro: Faster
+- Con: Partial fix, reviewers may still object
+
+## Current Status (2026-03-09)
+
+DONE:
+- Standalone baselines decontaminated (TF-IDF, Length, Vocab)
+- Combo splits regenerated from clean baselines
+- Clean combo data uploaded to HF Hub
+
+PENDING:
+- Ablation conditions NOT YET decontaminated (need professor input on approach)
+- No retrained models yet for baselines (need to launch jobs)
+- Combo jobs launched but used contaminated data — need to relaunch with clean
+
+## Scripts
+- Check: python experiments/analysis/check_test_contamination.py
+- Fix:   python experiments/data/decontaminate_splits.py [--dry-run] [--in-place]
