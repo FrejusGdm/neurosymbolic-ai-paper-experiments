@@ -9,6 +9,7 @@
 #     "huggingface-hub",
 #     "accelerate",
 #     "sacremoses",
+#     "rouge-score",
 # ]
 # ///
 """
@@ -58,10 +59,13 @@ from datetime import datetime, timezone
 # Force line-buffered stdout so print() appears in real-time in container logs
 sys.stdout.reconfigure(line_buffering=True)
 
+import math
+
 import numpy as np
 import sacrebleu
 import torch
 from huggingface_hub import HfApi, hf_hub_download
+from rouge_score import rouge_scorer as rouge_scorer_lib
 from sacremoses import MosesPunctNormalizer
 from transformers import (
     AutoModelForSeq2SeqLM,
@@ -353,11 +357,49 @@ def evaluate_test(model, tokenizer, test_file):
     chrfpp = sacrebleu.corpus_chrf(predictions, [references], word_order=2)
     ter = sacrebleu.corpus_ter(predictions, [references])
 
+    # ROUGE-L (token-level F1, averaged over sentences, scaled to 0–100)
+    scorer = rouge_scorer_lib.RougeScorer(["rougeL"], use_stemmer=False)
+    rouge_l_scores = [
+        scorer.score(ref, pred)["rougeL"].fmeasure
+        for pred, ref in zip(predictions, references)
+    ]
+    rouge_l = sum(rouge_l_scores) / len(rouge_l_scores) * 100.0
+
+    # Perplexity: evaluate cross-entropy loss (NLL) on target sequences
+    total_nll = 0.0
+    total_tokens = 0
+    for i in range(0, len(sources), BATCH_SIZE):
+        batch_src = sources[i:i + BATCH_SIZE]
+        batch_ref = references[i:i + BATCH_SIZE]
+        tokenizer.src_lang = SRC_LANG
+        src_enc = tokenizer(
+            batch_src, return_tensors="pt", max_length=MAX_LENGTH,
+            truncation=True, padding=True,
+        ).to(device)
+        # Tokenize targets with target language (deprecated but works in 4.44.2)
+        tokenizer.src_lang = TGT_LANG
+        tgt_enc = tokenizer(
+            batch_ref, return_tensors="pt", max_length=MAX_LENGTH,
+            truncation=True, padding=True,
+        ).to(device)
+        tokenizer.src_lang = SRC_LANG  # restore
+        labels = tgt_enc["input_ids"].clone()
+        labels[labels == tokenizer.pad_token_id] = -100
+        with torch.no_grad():
+            out = model(**src_enc, labels=labels)
+        # out.loss is mean NLL per non-pad token; recover sum
+        n_tokens = (labels != -100).sum().item()
+        total_nll += out.loss.item() * n_tokens
+        total_tokens += n_tokens
+    perplexity = math.exp(total_nll / total_tokens) if total_tokens > 0 else float("inf")
+
     return {
         "test_bleu": bleu.score,
         "test_chrf": chrf.score,
         "test_chrfpp": chrfpp.score,
         "test_ter": ter.score,
+        "test_rougeL": rouge_l,
+        "test_perplexity": perplexity,
         "test_bleu_signature": str(bleu),
         "test_n_samples": len(predictions),
     }

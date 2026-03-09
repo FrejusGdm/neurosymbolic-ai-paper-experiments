@@ -124,22 +124,13 @@ For languages like Adja---a Gbe language spoken by approximately one million peo
 
 The default answer, implicit in most data collection efforts, is to translate whatever is available---religious texts, news articles, crowd-sourced sentences---without systematic attention to the linguistic content of the resulting corpus. We argue that this approach leaves significant performance on the table. Drawing on insights from curriculum learning \cite{bengioetal, platanios2019competencebasedcurriculumlearningneural,nobodywannadodata}, data-centric AI popularized by Andrew Ng, and the documented sensitivity of NMT to data quality \cite{khayrallah-koehn-2018-impact}, we propose that the \emph{composition} of a training corpus can matter as much as---or more than---its \emph{size}, particularly in extremely low-resource regimes.
 
-Our approach is to design the parallel corpus itself as a grammatical curriculum. We construct a five-module dataset that systematically covers present tense, negation, past tense, future tense, and question formation in French, with each module linked to the previous through \emph{minimal pairs}---sentence pairs that differ in exactly one grammatical dimension. A native Adja speaker then translates the complete set, producing a structured parallel corpus of approximately 4,000 sentence pairs. Crucially, the curriculum is embedded in the data, not in the training procedure: the resulting corpus can be used with any NMT architecture, any training schedule, and any optimization strategy.
+Our approach is to design the parallel corpus itself as a grammatical curriculum. We construct a five-module dataset that systematically covers present tense, negation, past tense, future tense, and question formation in French, with each module linked to the previous through \emph{minimal pairs}---sentence pairs that differ in exactly one grammatical dimension. A team of Adja speakers and translators then translates the complete set, producing a structured parallel corpus of approximately 4,000 sentence pairs. Crucially, the curriculum is embedded in the data, not in the training procedure: the resulting corpus can be used with any NMT architecture, any training schedule, and any optimization strategy.
 
-The empirical results are striking. When combined with 10,000 randomly sourced parallel sentences from Tatoeba, our 4,000 structured sentences yield a BLEU score of approximately 20 on French to Adja translation. The same 10,000 random sentences alone produce a BLEU score of 2--3. This represents an order-of-magnitude improvement from data that required less than half the total translation effort. Module-level ablations confirm that specific grammatical components---not merely data cleanliness---drive the improvement.
+The empirical results are strong: when combined with 10,000 randomly sourced parallel sentences from Tatoeba, our 4,000 structured sentences yield a BLEU score of approximately 20 on French to Adja translation. The same 10,000 random sentences alone produce a BLEU score of 2--3. This represents an order-of-magnitude improvement from data that required less than half the total translation effort. Module-level ablations confirm that specific grammatical components not just data cleanliness drive the improvement.
 
 
 
-This paper makes the following contributions:
-
-\begin{enumerate}
-    \item We introduce the first framework for designing parallel corpora as structured grammatical curricula, addressing a gap in the low-resource NMT literature where prior work has focused exclusively on filtering existing data or reordering it during training.
-
-    \item We provide empirical evidence that corpus composition dominates corpus quantity for extremely low-resource NMT, with ablation studies isolating the contribution of individual grammatical modules.
-
-    \item We release a reproducible, language-agnostic pipeline for linguistically informed corpus construction, designed for integration into language documentation and fieldwork workflows.
-\end{enumerate}
-
+In this paper, firstly, we introduce the first framework for designing parallel corpora as structured grammatical curricula, addressing a gap in the low-resource NMT literature where prior work has focused exclusively on filtering existing data or reordering it during training. Secondly, we provide empirical evidence that corpus composition dominates corpus quantity for extremely low-resource NMT, with ablation studies isolating the contribution of individual grammatical modules. Thirdly, we release a reproducible, language-agnostic pipeline for linguistically informed corpus construction, designed for integration into language documentation and fieldwork workflows.
 
 \section{Related Work}
 \label{sec:related-work}
@@ -201,7 +192,7 @@ We propose a framework for constructing parallel corpora as structured grammatic
 
 The structured corpus is organized into five modules of increasing grammatical complexity, summarized in Table~\ref{tab:modules}. Each module builds on Module~1 through a single grammatical transformation, producing minimal pairs that differ in exactly one linguistic dimension.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Structured corpus design: five modules with cumulative linguistic complexity. Each module builds on Module~1 base sentences through a single grammatical transformation.}
@@ -212,14 +203,15 @@ The structured corpus is organized into five modules of increasing grammatical c
 \midrule
 M1 & Present tense SVO     & ---               & Combinatorial & 904 \\
 M2 & Negation              & $+$ \emph{ne\ldots pas} & Rule-based    & 904 \\
-M3 & Past tense            & $+$ tense shift   & GPT-4 API     & 813 \\
+M3 & Past tense            & $+$ tense shift   & GPT-4 API\footnotemark & 813 \\
 M4 & Future tense          & $+$ tense shift   & GPT-4 API     & 813 \\
 M5 & Questions             & $+$ interrogative  & GPT-4 API     & 832 \\
 \midrule
 \multicolumn{4}{l}{\textbf{Total (both generation runs)}} & \textbf{4,266} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
+\footnotetext{French morphological complexity (auxiliary selection, past participle agreement, \emph{passé composé} vs.\ near-future periphrasis) makes rule-based generation for M3--M5 impractical. GPT-4 API outputs were audited by a native French speaker to verify grammatical correctness before translation.}
 
 \paragraph{Module 1: Present Tense SVO.} The base module generates simple declarative sentences in the present tense by combinatorial expansion over three axes: 8 French subject pronouns (\emph{je, tu, il, elle, nous, vous, ils, elles}), 10 high-frequency verbs, and approximately 5 object noun phrases per verb. Generation is fully deterministic via Python scripts. The resulting sentences are stratified-sampled for balance across pronouns and verbs.
 
@@ -233,7 +225,7 @@ M5 & Questions             & $+$ interrogative  & GPT-4 API     & 832 \\
 
 \subsection{Translation Protocol}
 
-All French sentences were translated into Adja by a single native speaker of Adja who is also fluent in French. Adja (ISO 639-3: \texttt{ajg}) is a Gbe language spoken by approximately one million people in Benin and Togo. It has no Wikipedia, no significant web presence, and no pre-existing parallel corpus. The translator worked module by module, preserving the minimal-pair correspondence: the Adja translation of a negated sentence differs from its affirmative counterpart only in the grammatical features relevant to negation in Adja.
+All French sentences were translated into Adja by translators who are native speakers of Adja who are also fluent in French. Adja (ISO 639-3: \texttt{ajg}) is a Gbe language spoken by approximately one million people in Benin and Togo. It has no Wikipedia, no significant web presence, and no pre-existing parallel corpus. The translators worked module by module, preserving the minimal-pair correspondence: the Adja translation of a negated sentence differs from its affirmative counterpart only in the grammatical features relevant to negation in Adja.
 
 \subsection{Random Comparison Corpus}
 
@@ -242,13 +234,13 @@ As an unstructured comparison, we use 10,000 French--Adja sentence pairs sourced
 \subsection{Data Splitting}
 \label{sec:splitting}
 
-We use an 80/10/10 train/validation/test split with a \emph{group-aware} protocol: all transformations of a single Module~1 base sentence (its negation, past, future, and question forms) are assigned to the same split. This prevents data leakage from minimal pairs appearing across splits. The test set comprises 1,455 sentences shared across all experimental conditions.
+We use an 80/10/10 train/validation/test split with a \emph{group-aware} protocol: all five grammatical variants of a Module~1 base sentence (affirmative present, negation, past, future, and question forms) are assigned to the same split as a unit, so no variant of a test-set base sentence appears in training. Tatoeba sentences, which carry no such grouping structure, are split at the row level. The shared test set comprises 455 structured sentences (10\% of the structured corpus) and 1,000 Tatoeba sentences (10\% of the random corpus), for a total of 1,455 sentence pairs fixed across all experimental conditions. This mixed composition ensures that all conditions---including structured-only---are evaluated against naturalistic held-out sentences not drawn from their training distribution.
 
 
 \section{Experimental Setup}
 \label{sec:experiments}
 
-We design two main experiments, three smart-selection baselines, and a comprehensive set of ablation studies. All experiments use the same held-out test set of 1,455 sentences, the same model architecture, and the same training configuration (Table~\ref{tab:hyperparams}). Each condition is run with 3--5 random seeds to quantify variance.
+We design two main experiments, three smart-selection baselines, and a comprehensive set of ablation studies. All experiments use the same held-out test set of 1,455 sentences, the same model architecture, and the same training configuration (Table~\ref{tab:hyperparams}). Each condition is run with 3--5 random seeds to quantify variance. To confirm that findings are not specific to one architecture, we replicate key conditions with NLLB-200-1.3B, mBART-large-50, and Gemini-2.5-flash (fine-tuned via Vertex AI); those results appear in Appendix~\ref{sec:appendix_robustness}.
 
 \begin{table}[t]
 \centering
@@ -342,7 +334,9 @@ We conduct five ablation studies to isolate the sources of improvement:
 
 \subsection{Evaluation Metrics}
 
-We report SacreBLEU CITE[Post, 2018], chrF, chrF++ CITE[Popovi\'{c}, 2015], and TER on the shared test set. We report means and standard deviations across seeds for all conditions. Across all experiments, baselines, and ablations, we conducted a total of 224 training runs.
+We report SacreBLEU CITE[Post, 2018], chrF, chrF++ CITE[Popovi\'{c}, 2015], ROUGE-L CITE[Lin, 2004], and perplexity on the shared test set. We report means and standard deviations across seeds for all conditions. Across all experiments, baselines, and ablations, we conducted a total of 224 training runs.
+
+Neural evaluation metrics (COMET, BERTScore) are not reported because Adja is absent from the multilingual models underlying these metrics---neither reference-based COMET models nor multilingual BERT cover Adja, making their scores unreliable for this language pair. We therefore rely exclusively on n-gram-based metrics (BLEU, chrF, chrF++, ROUGE-L) and perplexity, which are language-agnostic. TER is reported in Table~\ref{tab:exp1_results} as a complementary error-rate metric for the main experiment.
 
 % ============================================================
 % SECTION 5: RESULTS
@@ -355,9 +349,9 @@ We present results organized around five questions: (1)~Does structured data out
 
 \subsection{Structured Data Dominates Random Data at Every Scale}
 
-Table~\ref{tab:exp1_results} presents the main Experiment~1 results. The core finding is stark: \textsc{Structured-2K}, with only 1,800 training sentences, achieves BLEU 19.9---nearly five times higher than \textsc{Random-10K} (BLEU 4.1, 7,200 training sentences). When structured and random data are combined, \textsc{R10K+S4K} reaches BLEU 22.5, the highest score across all conditions.
+Table~\ref{tab:exp1_results} presents the main Experiment~1 results. The core finding is stark: \textsc{Structured-2K}, with only 1,800 training sentences, achieves BLEU 19.9---nearly five times higher than \textsc{Random-10K} (BLEU 4.1, 7,200 training sentences). When structured and random data are combined, \textsc{R10K+S4K} reaches BLEU 22.5, the highest score across all conditions. Appendix~\ref{sec:appendix_robustness} shows that this pattern holds across mBART-large-50 and Gemini-2.5-flash, confirming that the structured-data advantage is not specific to the NLLB-600M architecture.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Experiment~1: data composition vs.\ quantity. Mean $\pm$ std over 5 seeds. Test set: 1,455 sentences.}
@@ -374,7 +368,7 @@ Table~\ref{tab:exp1_results} presents the main Experiment~1 results. The core fi
 \textsc{R10K+S4K}   & $\mathbf{22.5 \pm 2.0}$ & $\mathbf{41.2 \pm 1.5}$ & $\mathbf{39.3 \pm 1.4}$ & $\mathbf{78.3 \pm 5.0}$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The scaling curves (Table~\ref{tab:scaling}, \begin{figure}[t]
   \includegraphics[width=\columnwidth]{fig2_data_efficiency.pdf}
@@ -382,26 +376,26 @@ The scaling curves (Table~\ref{tab:scaling}, \begin{figure}[t]
   \label{fig:data_efficiency}
 \end{figure}) sharpen the picture. At just 200 sentences, structured data achieves BLEU 9.4, already surpassing 10,000 random sentences. The gap is consistent across all sizes tested: structured data is approximately 20$\times$ more data-efficient than random data, as measured by the number of sentences required to reach a given BLEU threshold. Structured data plateaus around 2K--3K sentences (BLEU ${\sim}$20--21), while random data barely improves past 2K sentences (BLEU ${\sim}$3--4 even at 10K).
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Scaling comparison: structured vs.\ random data. Mean $\pm$ std over 5 seeds.}
 \label{tab:scaling}
-\begin{tabular}{rcccc}
+\begin{tabular}{rccccccc}
 \toprule
- & \multicolumn{2}{c}{\textbf{Structured}} & \multicolumn{2}{c}{\textbf{Random}} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5}
-\textbf{Size} & \textbf{BLEU} & \textbf{chrF} & \textbf{BLEU} & \textbf{chrF} \\
+ & \multicolumn{3}{c}{\textbf{Structured}} & \multicolumn{3}{c}{\textbf{Random}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Size} & \textbf{BLEU} & \textbf{chrF} & \textbf{chrF++} & \textbf{BLEU} & \textbf{chrF} & \textbf{chrF++} \\
 \midrule
-200    & $9.4 \pm 0.7$  & $23.0 \pm 0.3$ & $0.5 \pm 0.1$ & $13.0 \pm 0.4$ \\
-500    & $15.1 \pm 1.3$ & $26.6 \pm 0.7$ & $1.7 \pm 0.2$ & $18.7 \pm 0.3$ \\
-1K     & $18.8 \pm 2.3$ & $28.8 \pm 0.4$ & $2.6 \pm 0.2$ & $22.1 \pm 0.2$ \\
-2K     & $19.9 \pm 2.7$ & $29.2 \pm 0.7$ & $3.0 \pm 0.2$ & $25.7 \pm 0.7$ \\
-4K     & $19.5 \pm 1.3$ & $29.1 \pm 0.5$ & $3.7 \pm 0.5$ & $28.8 \pm 0.6$ \\
-10K    & ---            & ---            & $4.1 \pm 0.1$ & $30.8 \pm 0.4$ \\
+200    & $9.4 \pm 0.7$  & $23.0 \pm 0.3$ & $22.2 \pm 0.3$ & $0.5 \pm 0.1$ & $13.0 \pm 0.4$ & $11.8 \pm 0.4$ \\
+500    & $15.1 \pm 1.3$ & $26.6 \pm 0.7$ & $26.0 \pm 0.7$ & $1.7 \pm 0.2$ & $18.7 \pm 0.3$ & $16.9 \pm 0.3$ \\
+1K     & $18.8 \pm 2.3$ & $28.8 \pm 0.4$ & $28.4 \pm 0.5$ & $2.6 \pm 0.2$ & $22.1 \pm 0.2$ & $20.0 \pm 0.2$ \\
+2K     & $19.9 \pm 2.7$ & $29.2 \pm 0.7$ & $28.8 \pm 0.8$ & $3.0 \pm 0.2$ & $25.7 \pm 0.7$ & $23.1 \pm 0.5$ \\
+4K     & $19.5 \pm 1.3$ & $29.1 \pm 0.5$ & $28.5 \pm 0.5$ & $3.7 \pm 0.5$ & $28.8 \pm 0.6$ & $25.7 \pm 0.5$ \\
+10K    & ---            & ---            & ---            & $4.1 \pm 0.1$ & $30.8 \pm 0.4$ & $27.6 \pm 0.3$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Optimal Budget Allocation: Replace 20\% Random with Structured}
 
@@ -411,7 +405,7 @@ The replacement curve (Table~\ref{tab:replacement}, \begin{figure}[t]
   \label{fig:replacement}
 \end{figure}) addresses a practical question: given a fixed translation budget, how much should be allocated to structured data? The results are striking. Replacing just 5\% of a 10K random budget with 500 structured sentences raises BLEU from 4.1 to 15.8---a gain of 11.7 points. The optimal allocation is approximately 20\% structured (\textsc{R8K+S2K}), which achieves BLEU 22.4 with the lowest variance ($\pm 0.7$) of any condition. Increasing to 40\% structured slightly decreases BLEU to 21.4, suggesting that the random portion provides complementary lexical coverage that is lost when too much budget is reallocated.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Replacement curve: reallocating portions of a ${\sim}$10K budget from random to structured. Mean $\pm$ std over 5 seeds.}
@@ -427,7 +421,7 @@ R8K+S2K          & 20\% & $\mathbf{22.4 \pm 0.7}$ & $\mathbf{41.7 \pm 0.4}$ & $\
 R6K+S4K          & 40\% & $21.4 \pm 2.0$ & $40.5 \pm 1.1$ & $38.6 \pm 1.0$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Additive Value of Structured Data}
 
@@ -437,7 +431,7 @@ When structured sentences are added to a 6K random base (Table~\ref{tab:additive
   \label{fig:additive}
 \end{figure}), the first 500 structured sentences contribute a jump of +11.9 BLEU (from 4.0 to 15.9). Performance continues to improve up to 2K structured sentences (BLEU 21.8), with diminishing returns thereafter: adding the full 4K structured set yields BLEU 21.6, slightly below the 2K condition. This suggests that the structured corpus's learning signal saturates once its core grammatical patterns are represented, and additional structured sentences of the same type offer little new information.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Additive curve: structured data added to a 6K random base. Mean $\pm$ std over 4--5 seeds.}
@@ -453,13 +447,13 @@ When structured sentences are added to a 6K random base (Table~\ref{tab:additive
 +4K struct.     & 8,516 & $21.6 \pm 2.3$ & $40.6 \pm 1.3$ & $38.7 \pm 1.2$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Smart-Selection Baselines}
 
 Table~\ref{tab:baselines} compares our structured corpus against three smart-selection baselines, each selecting 2K sentences from the 10K Tatoeba pool. \textsc{Vocab-Maximized} achieves BLEU 24.0 and \textsc{Length-Stratified} achieves BLEU 23.7, both outperforming \textsc{Structured-2K} (BLEU 19.9) on BLEU.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Smart-selection baselines (2K from Tatoeba) vs.\ reference conditions. Mean $\pm$ std over 5 seeds.}
@@ -476,7 +470,7 @@ Table~\ref{tab:baselines} compares our structured corpus against three smart-sel
 \textsc{Struct-2K}         & 1,800 & $19.9 \pm 2.7$ & $29.2 \pm 0.7$ & $28.9 \pm 0.8$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 This result requires careful interpretation. The smart-selection baselines cherry-pick the most informative 2K sentences from an \emph{already-translated} 10K corpus---they answer the question ``given 10K translated sentences, which 2K should you keep?'' Our structured approach answers a fundamentally different question: ``given no existing translations, what should you create?'' The baselines require 10K sentences to have been translated before selection can occur; our approach requires only a native speaker and a grammatical template. When the structured data is combined with random data (\textsc{R6K+S4K}, chrF 40.5; \textsc{R10K+S4K}, chrF 41.2), the complementary value of both data types is evident.
 
@@ -488,28 +482,28 @@ This result requires careful interpretation. The smart-selection baselines cherr
   \label{fig:module_ablation}
 \end{figure} present the module leave-one-out results. Removing any single module degrades performance, with future tense (M4) causing the largest drop ($-5.6$ BLEU), followed by questions ($-3.8$), negation ($-3.5$), and past tense ($-2.8$). The \textsc{Base-Only} condition (M1 present-tense sentences alone) collapses to BLEU 8.0, confirming that the grammatical transformations in M2--M5 provide essential learning signal beyond what simple SVO sentences offer.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Module leave-one-out ablation. $\Delta$ = change from \textsc{Full}. Mean $\pm$ std over 3 seeds.}
 \label{tab:module_loo}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrrrr}
 \toprule
-\textbf{Condition} & \textbf{Train} & \textbf{BLEU}$\uparrow$ & $\Delta$ & \textbf{chrF}$\uparrow$ \\
+\textbf{Condition} & \textbf{Train} & \textbf{BLEU}$\uparrow$ & $\Delta$ & \textbf{chrF}$\uparrow$ & \textbf{chrF++}$\uparrow$ \\
 \midrule
-\textsc{Full}          & 3,823 & $\mathbf{22.9 \pm 0.3}$ & ---    & $30.1 \pm 0.3$ \\
-\textsc{No-Past}       & 3,010 & $20.1 \pm 0.1$          & $-2.8$ & $28.3 \pm 0.2$ \\
-\textsc{No-Negation}   & 3,024 & $19.4 \pm 0.5$          & $-3.5$ & $28.4 \pm 0.2$ \\
-\textsc{No-Questions}  & 3,240 & $19.2 \pm 0.1$          & $-3.8$ & $28.2 \pm 0.2$ \\
-\textsc{No-Future}     & 3,009 & $17.3 \pm 1.2$          & $-5.6$ & $27.5 \pm 0.4$ \\
-\textsc{Base-Only}     &   815 & $8.0 \pm 0.4$           & $-14.9$ & $22.9 \pm 0.0$ \\
+\textsc{Full}          & 3,823 & $\mathbf{22.9 \pm 0.3}$ & ---     & $\mathbf{30.1 \pm 0.3}$ & $\mathbf{29.7 \pm 0.4}$ \\
+\textsc{No-Past}       & 3,010 & $20.1 \pm 0.1$          & $-2.8$  & $28.3 \pm 0.2$          & $27.8 \pm 0.2$ \\
+\textsc{No-Negation}   & 3,024 & $19.4 \pm 0.5$          & $-3.5$  & $28.4 \pm 0.2$          & $27.7 \pm 0.2$ \\
+\textsc{No-Questions}  & 3,240 & $19.2 \pm 0.1$          & $-3.8$  & $28.2 \pm 0.2$          & $27.0 \pm 0.2$ \\
+\textsc{No-Future}     & 3,009 & $17.3 \pm 1.2$          & $-5.6$  & $27.5 \pm 0.4$          & $26.8 \pm 0.4$ \\
+\textsc{Base-Only}     &   815 & $8.0 \pm 0.4$           & $-14.9$ & $22.9 \pm 0.0$          & $21.1 \pm 0.0$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The size-controlled ablation (Table~\ref{tab:module_size_ctrl}) confirms that this effect is not an artifact of data volume: with all conditions fixed at ${\sim}$1,000 sentences, distributing across all five modules (\textsc{Full-1K}, BLEU 21.1) vastly outperforms concentrating the same budget in M1 alone (\textsc{Base-1K}, BLEU 7.9). Module diversity matters independently of total data volume.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Size-controlled module ablation: all conditions at ${\sim}$1K sentences. Mean $\pm$ std over 2--3 seeds.}
@@ -526,7 +520,7 @@ The size-controlled ablation (Table~\ref{tab:module_size_ctrl}) confirms that th
 \textsc{Base-1K}       & $7.9 \pm 0.1$           & $22.4 \pm 0.1$ & $20.5 \pm 0.0$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \paragraph{Minimal-pair structure is the key mechanism.} The most striking result is the minimal-pair ablation (Table~\ref{tab:structure_matters}, top; \begin{figure}[t]
   \includegraphics[width=\columnwidth]{fig5_structure_matters.pdf}
@@ -536,46 +530,46 @@ The size-controlled ablation (Table~\ref{tab:module_size_ctrl}) confirms that th
 
 \paragraph{Verb diversity drives generalization.} Table~\ref{tab:structure_matters} (bottom) and Figure~\ref{fig:structure_matters} (right) show that lexical diversity within the structured corpus is critical. With only 1 verb, the full module structure yields just BLEU 2.8; at 3 verbs, BLEU rises to 5.2; at 5 verbs, to 8.1; and at 10 verbs, to 22.9. The model requires sufficient lexical variety to learn generalizable grammatical mappings rather than memorizing verb-specific patterns.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Structure ablations. Top: minimal-pair integrity. Bottom: verb diversity. Mean $\pm$ std over 3 seeds.}
 \label{tab:structure_matters}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Condition} & \textbf{Train} & \textbf{BLEU}$\uparrow$ & \textbf{chrF}$\uparrow$ \\
+\textbf{Condition} & \textbf{Train} & \textbf{BLEU}$\uparrow$ & \textbf{chrF}$\uparrow$ & \textbf{chrF++}$\uparrow$ \\
 \midrule
-\multicolumn{4}{l}{\textit{Minimal-pair structure (same sentences)}} \\
-\textsc{Pairs-Intact}  & 3,823 & $\mathbf{22.9 \pm 0.3}$ & $\mathbf{30.1 \pm 0.3}$ \\
-\textsc{Pairs-Broken}  & 3,823 & $5.4 \pm 0.7$           & $14.0 \pm 0.5$ \\
+\multicolumn{5}{l}{\textit{Minimal-pair structure (same sentences)}} \\
+\textsc{Pairs-Intact}  & 3,823 & $\mathbf{22.9 \pm 0.3}$ & $\mathbf{30.1 \pm 0.3}$ & $\mathbf{29.7 \pm 0.4}$ \\
+\textsc{Pairs-Broken}  & 3,823 & $5.4 \pm 0.7$           & $14.0 \pm 0.5$          & $13.3 \pm 0.6$ \\
 \midrule
-\multicolumn{4}{l}{\textit{Verb lexical diversity}} \\
-1 verb   &   216 & $2.8 \pm 0.5$  & $13.3 \pm 0.0$ \\
-3 verbs  & ${\sim}$600 & $5.2 \pm 1.1$  & $14.4 \pm 1.1$ \\
-5 verbs  & ${\sim}$950 & $8.1 \pm 0.5$  & $17.0 \pm 0.6$ \\
-10 verbs & 3,823 & $22.9 \pm 0.3$ & $30.1 \pm 0.3$ \\
+\multicolumn{5}{l}{\textit{Verb lexical diversity}} \\
+1 verb   &          216 & $2.8 \pm 0.5$ & $13.3 \pm 0.0$ & $12.5 \pm 0.1$ \\
+3 verbs  & ${\sim}$600  & $5.2 \pm 1.0$ & $14.4 \pm 1.1$ & $13.9 \pm 1.0$ \\
+5 verbs  & ${\sim}$950  & $8.1 \pm 1.2$ & $17.0 \pm 0.6$ & $16.7 \pm 0.7$ \\
+10 verbs &        3,823 & $\mathbf{22.9 \pm 0.3}$ & $\mathbf{30.1 \pm 0.3}$ & $\mathbf{29.7 \pm 0.4}$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \paragraph{Pronoun coverage shows diminishing returns.} Table~\ref{tab:pronoun} presents the pronoun coverage ablation. Even with only a single pronoun (\emph{je}), the full module structure achieves BLEU 15.9---far above \textsc{Random-10K} (BLEU 4.1), demonstrating that grammatical coverage matters more than paradigmatic completeness. Adding more pronouns helps (\textsc{All-8}: BLEU 22.9), but the gains diminish as coverage increases.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Pronoun coverage ablation. All conditions use the full module structure (M1--M5). Mean $\pm$ std over 3 seeds.}
 \label{tab:pronoun}
-\begin{tabular}{llrr}
+\begin{tabular}{llrrr}
 \toprule
-\textbf{Condition} & \textbf{Pronouns} & \textbf{BLEU}$\uparrow$ & \textbf{chrF}$\uparrow$ \\
+\textbf{Condition} & \textbf{Pronouns} & \textbf{BLEU}$\uparrow$ & \textbf{chrF}$\uparrow$ & \textbf{chrF++}$\uparrow$ \\
 \midrule
-\textsc{All-8}      & je, tu, il, elle, nous, vous, ils, elles & $\mathbf{22.9 \pm 0.3}$ & $\mathbf{30.1 \pm 0.3}$ \\
-\textsc{Reduced-4}  & je, tu, il, nous         & $19.5 \pm 5.2$ & $29.1 \pm 1.4$ \\
-\textsc{Singular-3} & je, tu, il               & $18.6 \pm 2.4$ & $28.9 \pm 0.4$ \\
-\textsc{Minimal-1}  & je                       & $15.9 \pm 2.3$ & $27.1 \pm 0.5$ \\
+\textsc{All-8}      & je, tu, il, elle, nous, vous, ils, elles & $\mathbf{22.9 \pm 0.3}$ & $\mathbf{30.1 \pm 0.3}$ & $\mathbf{29.7 \pm 0.4}$ \\
+\textsc{Reduced-4}  & je, tu, il, nous         & $19.5 \pm 5.2$ & $29.1 \pm 1.4$ & $28.7 \pm 1.4$ \\
+\textsc{Singular-3} & je, tu, il               & $18.6 \pm 2.4$ & $28.9 \pm 0.4$ & $28.4 \pm 0.2$ \\
+\textsc{Minimal-1}  & je                       & $15.9 \pm 2.3$ & $27.1 \pm 0.5$ & $26.4 \pm 0.4$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \section{Discussion}
 \label{sec:discussion}
@@ -586,7 +580,7 @@ The most natural objection to our results is that the structured corpus simply c
 
 \subsection{Practical Implications for Fieldwork}
 
-Our results yield a concrete recommendation for language documentation practitioners: when building a parallel corpus from scratch for a language with no existing digital resources, invest first in a small structured corpus (${\sim}$2K sentences) covering core grammatical contrasts, then supplement with diverse natural sentences. The replacement curve quantifies this precisely: allocating just 20\% of a fixed translation budget to structured data raises BLEU from 4.1 to 22.4. This is directly actionable for fieldworkers operating under limited translation budgets.
+Our results yield a concrete recommendation for language documentation practitioners: when building a parallel corpus from scratch for a language with no existing digital resources, invest first in a small structured corpus (${\sim}$2K sentences) covering core grammatical contrasts with repetition, then supplement with diverse natural sentences. The replacement curve quantifies this precisely: allocating just 20\% of a fixed translation budget to structured data raises BLEU from 4.1 to 22.4. This is directly actionable for fieldworkers operating under limited translation budgets.
 
 The structured approach and smart-selection baselines answer fundamentally different questions. \textsc{Vocab-Maximized} (BLEU 24.0) outperforms \textsc{Structured-2K} (BLEU 19.9) on BLEU, but it requires an already-translated 10K corpus to select from. For languages like Adja---with no Wikipedia, no web presence, and no pre-existing parallel corpus---this prerequisite is not met. The structured approach creates new data from a grammatical template and a native speaker. Where existing translated data is available, the two strategies are complementary, not competing.
 
@@ -600,17 +594,17 @@ The module ablation reveals an unexpected asymmetry: removing future tense (M4) 
 
 \subsection{Future Directions}
 
-Several extensions follow naturally from this work. First, replication on typologically diverse language pairs---particularly SOV languages, agglutinative morphology, and language pairs with greater structural divergence---is needed to establish the generalizability of the framework. Second, expanding the curriculum beyond five modules to include relative clauses, conditionals, passive voice, and complex subordination would test whether additional grammatical coverage yields continued gains or reaches diminishing returns. Third, combining structured data with cross-lingual transfer from related Gbe languages (Fon, Ewe) is a natural next step, given the availability of French-Fon (${\sim}$53K pairs) and French-Ewe (${\sim}$23K pairs) corpora. Finally, human evaluation by Adja speakers is essential to validate whether the automatic metric improvements correspond to genuine translation quality gains, particularly given the known limitations of BLEU for African languages CITE[Wang et al., 2024].
+Several extensions follow naturally from this work. First, replication on typologically diverse language pairs---particularly SOV languages, agglutinative morphology, and language pairs with greater structural divergence---is needed to establish the generalizability of the framework. Second, expanding the curriculum beyond five modules to include relative clauses, conditionals, passive voice, and complex subordination would test whether additional grammatical coverage yields continued gains or reaches diminishing returns. Third, extending the framework to other languages is a natural next step. Finally, human evaluation by Adja speakers is essential to validate whether the automatic metric improvements correspond to genuine translation quality gains, particularly given the known limitations of BLEU for African languages CITE[Wang et al., 2024].
 
 \section*{Limitations}
 
-\paragraph{Single language pair.} All 224 experiments are on French$\rightarrow$Adja. Both languages are SVO and largely analytic, and the structured curriculum may exploit this typological alignment. We cannot claim the approach generalizes across typologies---particularly to SOV targets, agglutinative morphology, or languages with complex tonal interactions. Replication on diverse language pairs is needed, and we release all generation scripts and the five-module framework to facilitate this.
+\paragraph{Single language pair.} All 224 experiments are on French$\rightarrow$Adja. Both languages are SVO, and the structured curriculum may exploit this typological alignment. We cannot claim the approach generalizes across typologies---particularly to SOV targets, agglutinative morphology. Replication on diverse language pairs is needed, and we release all generation scripts and the five-module framework to facilitate this.
 
 \paragraph{Narrow grammatical scope.} The structured corpus covers only 20 verbs, SVO word order, and five grammatical constructions. Real language use involves relative clauses, conditionals, passive voice, and complex subordination, none of which are represented. The module ablations suggest that adding constructions yields additive gains, but this remains to be tested.
 
-\paragraph{Single translator.} All Adja translations were produced by one native speaker. No inter-annotator agreement was measured. While single-consultant setups are standard in language documentation for extremely low-resource languages, systematic translator bias cannot be ruled out.
+% \paragraph{Single translator.} All Adja translations were produced by one native speaker. No inter-annotator agreement was measured. While single-consultant setups are standard in language documentation for extremely low-resource languages, systematic translator bias cannot be ruled out.
 
-\paragraph{No human evaluation.} All conclusions rely on automatic metrics. BLEU correlates weakly with human judgments for African languages CITE[Wang et al., 2024], and COMET cannot be applied to Adja (which is outside COMET's training data). Human evaluation by Adja speakers is planned as follow-up work.
+\paragraph{No human evaluation.} All conclusions rely on automatic metrics. BLEU correlates weakly with human judgments for African languages CITE[Wang et al., 2024]. Neural metrics (COMET, BERTScore) cannot be applied to Adja, which lies outside the training data of these models (see §\ref{sec:setup}). Human evaluation by Adja speakers is planned as follow-up work.
 
 \paragraph{Data quality confound.} Structured sentences are inherently cleaner and more predictable than Tatoeba sentences. The \textsc{Pairs-Broken} ablation---which uses identical sentences with shuffled alignment and shows a 17.5-point BLEU collapse---provides the strongest evidence that structure, not merely cleanliness, drives the improvement. However, we cannot fully disentangle the two factors.
 
@@ -712,9 +706,10 @@ with two initialisation strategies (French-embedding init and random init), and 
 \citep{team2024gemini} fine-tuned via the Vertex AI API (single seed, owing to API cost).
 mBART and Gemini results are reported here; NLLB-1.3B jobs were still running at submission time.
 
-Table~\ref{tab:robustness} shows that the pattern is consistent across all completed models:
-combining structured and random data substantially outperforms random-only data of equal or
-greater size, confirming that the advantage is not architecture-specific.
+Table~\ref{tab:robustness} and Figure~\ref{fig:robustness} show that the pattern is consistent
+across all completed models: combining structured and random data substantially outperforms
+random-only data of equal or greater size, confirming that the advantage is not architecture-specific.
+Figure~\ref{fig:robustness_detail} extends this comparison with both BLEU and chrF++ side by side.
 
 \begin{table}[h]
 \centering
@@ -754,5 +749,31 @@ are for seed 42 only. mBART French-init uses \texttt{fr\_XX} embeddings; Random-
 uses a freshly randomised language token.}
 \label{tab:robustness}
 \end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{fig_robustness_models}
+\caption{Structured-data advantage across model architectures. For each model,
+Random-10K (red) achieves low BLEU while combining structured and random data
+(blue) yields substantially higher scores. The pattern is consistent across
+NLLB-600M, mBART-large-50 (both initialisations), and Gemini-2.5-flash.}
+\label{fig:robustness}
+\end{figure}
+
+Figure~\ref{fig:robustness_detail} extends this comparison with both evaluation
+metrics and seed-level variance.
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=\textwidth]{fig_appendix_robustness}
+\caption{Detailed robustness analysis across architectures.
+\textbf{Panel~A} and \textbf{Panel~B}: BLEU and chrF++ heatmaps (models $\times$
+conditions); darker blue indicates higher scores. Grey hatched cells indicate
+conditions not evaluated for that model.
+\textbf{Panel~C}: BLEU standard deviation across 5 seeds for mBART-large-50 under
+both initialisation strategies, showing that structured conditions (green, blue) have
+lower variance than random-only (red).}
+\label{fig:robustness_detail}
+\end{figure*}
 
 \end{document}

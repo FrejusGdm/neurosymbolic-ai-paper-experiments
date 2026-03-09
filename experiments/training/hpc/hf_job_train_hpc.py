@@ -278,7 +278,7 @@ def evaluate_test(model, tokenizer, test_file, src_lang, tgt_lang,
     chrfpp = sacrebleu.corpus_chrf(predictions, [references], word_order=2)
     ter = sacrebleu.corpus_ter(predictions, [references])
 
-    return {
+    metrics = {
         "test_bleu": bleu.score,
         "test_chrf": chrf.score,
         "test_chrfpp": chrfpp.score,
@@ -286,6 +286,51 @@ def evaluate_test(model, tokenizer, test_file, src_lang, tgt_lang,
         "test_bleu_signature": str(bleu),
         "test_n_samples": len(predictions),
     }
+
+    # ROUGE-L (optional — requires rouge-score in container)
+    try:
+        from rouge_score import rouge_scorer as rouge_scorer_lib
+        scorer = rouge_scorer_lib.RougeScorer(["rougeL"], use_stemmer=False)
+        rouge_l_scores = [scorer.score(ref, pred)["rougeL"].fmeasure
+                          for pred, ref in zip(predictions, references)]
+        metrics["test_rougeL"] = sum(rouge_l_scores) / len(rouge_l_scores) * 100.0
+    except ImportError:
+        pass  # rouge-score not available in this container
+
+    # Perplexity (NLL-based)
+    try:
+        import math as _math
+        total_nll = 0.0
+        total_tokens = 0
+        model.eval()
+        tokenizer.src_lang = tgt_lang
+        for i in range(0, len(sources), batch_size):
+            batch_src = sources[i:i + batch_size]
+            batch_ref = references[i:i + batch_size]
+            tgt_enc = tokenizer(
+                batch_ref, return_tensors="pt", max_length=max_length,
+                truncation=True, padding=True,
+            ).to(device)
+            tokenizer.src_lang = src_lang
+            src_enc = tokenizer(
+                batch_src, return_tensors="pt", max_length=max_length,
+                truncation=True, padding=True,
+            ).to(device)
+            tokenizer.src_lang = tgt_lang  # restore for next iter
+            labels = tgt_enc["input_ids"].clone()
+            labels[labels == tokenizer.pad_token_id] = -100
+            with torch.no_grad():
+                out = model(**src_enc, labels=labels)
+            n_tokens = (labels != -100).sum().item()
+            total_nll += out.loss.item() * n_tokens
+            total_tokens += n_tokens
+        tokenizer.src_lang = src_lang  # restore after loop
+        if total_tokens > 0:
+            metrics["test_perplexity"] = _math.exp(total_nll / total_tokens)
+    except Exception:
+        pass  # don't let perplexity failure break the whole job
+
+    return metrics
 
 
 # ---------------------------------------------------------------------------

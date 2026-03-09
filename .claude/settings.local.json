@@ -54,7 +54,11 @@
       "WebFetch(domain:docs.cloud.google.com)",
       "Bash(python:*)",
       "mcp__nia__nia_research",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(ls:*)",
+      "Bash(do echo \"=== $f ===\")",
+      "Read(//Users/josuegodeme/Downloads/neurosymbolic-ai-paper-experiments/**)",
+      "Bash(done)"
     ]
   },
   "enableAllProjectMcpServers": true,

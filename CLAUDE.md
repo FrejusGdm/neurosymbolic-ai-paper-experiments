@@ -82,6 +82,48 @@ Five-module curriculum design, each building on Module 1 base sentences:
 - **`as_target_tokenizer()` is deprecated** in transformers 4.44+ but still works. Pin `transformers==4.44.2`. If it breaks in a future version, replace with: set `tokenizer.src_lang = TGT_LANG`, tokenize, then restore `src_lang`.
 - **`aj_Latn` is a custom token** — must call `fix_tokenizer()` + `model.resize_token_embeddings()` every time the model/tokenizer is loaded.
 
+## HPC (Dartmouth Discovery)
+
+- **Login**: `f006g5b@discovery.dartmouth.edu`
+- **Results path**: `/dartfs/rc/lab/R/RCoto/godeme/adja-nmt-hpc/results/`
+- **Logs path**: `/dartfs/rc/lab/R/RCoto/godeme/adja-nmt-hpc/logs/`
+- **rsync results to local** (run from repo root):
+  ```bash
+  rsync -av --include="*/test_metrics.json" --include="*/" --exclude="*" \
+    f006g5b@discovery.dartmouth.edu:/dartfs/rc/lab/R/RCoto/godeme/adja-nmt-hpc/results/ \
+    experiments/results/hpc_new/
+  ```
+  Use `-av` not `-avz` (remote rsync lacks old-style compress flag).
+- **Result file pattern**: `{results_subdir}/{experiment}/{condition}/seed{seed}/test_metrics.json`
+  - `results_subdir`: `nllb-1.3b`, `mbart-fr`, `mbart-rand`
+  - `experiment`: e.g. `exp1`
+
+## Current Work Status
+
+**Always check this file first to understand where the project stands:**
+`latex_experiments/2026-03-06_professor-feedback.md`
+
+It contains:
+- Quick status table (what's done vs. pending)
+- Exact commands to run next
+- Completed changes with details
+- Pending changes waiting on job results
+- Full table numbering reference
+
+## Paper & Analysis Workflow
+
+- **Paper**: `acl_latex.tex` (ACL two-column format)
+- **Figures**: generated to `experiments/results/figures/` → copy PDFs to Overleaf root
+- **Wide tables**: use `\begin{table*}` / `\end{table*}` (not `table`) to span both columns
+- **Gemini results** (local): `experiments/results/gemini/exp1/{condition}/seed42/test_metrics.json`
+  - Only seed 42 evaluated (API cost); only RANDOM-10K and RANDOM-6K_STRUCTURED-4K conditions
+- **Aggregation script**: `python experiments/analysis/compute_robustness_table.py`
+  → writes `experiments/results/summary/robustness_table.csv`
+- **Figure scripts**:
+  - `python experiments/analysis/generate_paper_figures.py` — all main paper figures (fig2–fig8)
+  - `python experiments/analysis/generate_robustness_figure.py` — appendix bar chart
+  - `python experiments/analysis/generate_appendix_figure.py` — appendix heatmap (BLEU + chrF++)
+
 ## Critical Constraints
 
 - **Data is private**: Generated Adja translation data must never be committed. The language community's consent governs data sharing.

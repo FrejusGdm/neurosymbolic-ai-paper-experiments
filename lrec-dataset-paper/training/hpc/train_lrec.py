@@ -472,7 +472,8 @@ def main():
         if step % args.eval_steps == 0:
             val_loss, val_bleu, val_chrf = evaluate_val(
                 model, tokenizer, val_data, device, args.model_type,
-                src_lang, tgt_lang, args.batch_size, max_length, args.num_beams, args.direction
+                src_lang, tgt_lang, args.batch_size, max_length, args.num_beams,
+                direction=args.direction
             )
             print(f"  Val loss: {val_loss:.4f} | Val BLEU: {val_bleu:.1f} | Val chrF: {val_chrf:.1f}")
 

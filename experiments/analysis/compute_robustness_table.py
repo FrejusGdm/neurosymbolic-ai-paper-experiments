@@ -260,11 +260,14 @@ def main():
     print()
 
     # ── Save CSV ──
+    import csv as _csv
     output.parent.mkdir(parents=True, exist_ok=True)
-    with open(output, "w") as f:
-        f.write("model,condition,bleu_mean,bleu_std,chrfpp_mean,chrfpp_std,n\n")
+    with open(output, "w", newline="") as f:
+        writer = _csv.writer(f, quoting=_csv.QUOTE_ALL)
+        writer.writerow(["model", "condition", "bleu_mean", "bleu_std",
+                         "chrfpp_mean", "chrfpp_std", "n"])
         for row in rows:
-            f.write(",".join([
+            writer.writerow([
                 row["model"],
                 row["condition"],
                 f"{row['bleu_mean']:.4f}"   if row["bleu_mean"]   is not None else "",
@@ -272,7 +275,7 @@ def main():
                 f"{row['chrfpp_mean']:.4f}" if row["chrfpp_mean"] is not None else "",
                 f"{row['chrfpp_std']:.4f}"  if row["chrfpp_std"]  is not None else "",
                 str(row["n"])
-            ]) + "\n")
+            ])
     print(f"Saved CSV → {output}")
 
 

@@ -1,5 +1,5 @@
 \abstract{
-We present the first parallel corpus for Adja, an under-resourced Gbe language spoken by approximately 1,000,000 people in Benin and Togo. The corpus contains 10,000 French-Adja sentence pairs, providing a foundation for machine translation research. We establish baseline results using fine-tuned NLLB and ByT5 models, achieving chrF++=25 in the French→Aja direction, and up to chrF++=31 in the Aja→French direction. This work represents the first public machine translation resource for Adja. It provides benchmarks for future studies on this under-resourced West African language, and will enable future research on Adja language technologies. The corpus is publicly released to enable future research on Adja language technologies at this [GITHUB URL].
+We present the first parallel corpus for Adja, an under-resourced Gbe language spoken by approximately 1,000,000 people in Benin and Togo. The corpus contains 10,000 French-Adja sentence pairs, providing a foundation for machine translation research. We establish baseline results using fine-tuned NLLB and ByT5 models, achieving a chrF++ of 28 in the French→Adja direction, and up to a chrF++ of 31 in the Adja→French direction. This work represents the first public machine translation resource for Adja. It provides benchmarks for future studies on this under-resourced West African language. The dataset and fine-tuned models are publicly available at \url{[GITHUB URL]}.
 \\ \newline \Keywords{Adja language, parallel corpus, machine translation, low-resource NLP, West African languages, Gbe languages}}
 
 
@@ -17,8 +17,8 @@ Machine translation (MT) systems, in particular, have the potential to bridge la
 
 This paper makes the following contributions:
 \begin{itemize}
-    \item We present the first French-Adja parallel corpus containing 10,000 sentence pairs, establishing a foundation for computational work on Adja.
-    \item We provide baseline machine translation results using state-of-the-art neural models (NLLB-200 \cite{nllbteam2022languageleftbehindscaling} and ByT5 \cite{xue2022byt5tokenfreefuturepretrained}), demonstrating both the utility of the corpus and the challenges inherent in extremely low-resource MT
+    \item We present the first French-Adja parallel corpus containing 10,000 sentence pairs, establishing a foundation for computational work on Adja
+    \item We provide baseline machine translation results using three state-of-the-art neural models (NLLB-200 \cite{nllbteam2022languageleftbehindscaling}, mBART-50 \cite{liu2020multilingualdenoisingpretrainingneural}, and ByT5 \cite{xue2022byt5tokenfreefuturepretrained}), demonstrating both the utility of the corpus and the challenges inherent in extremely low-resource MT
     \item We establish evaluation benchmarks for future Adja machine translation research
     \item We release the corpus publicly under a non-commercial license to enable further academic research
 \end{itemize}
@@ -51,7 +51,7 @@ Adja belongs to the Gbe language cluster, which includes Fon, Ewe, Gen, and othe
 
 \subsection{Data Collection}
 
-\textbf{Source Selection.} We selected 10,000 French sentences from Tatoeba\footnote{https://tatoeba.org}, a collaborative platform for collecting translated sentences contributed by people worldwide. While Tatoeba provides diverse sentence structures and vocabulary, the sentences are not domain-specific, there is no quality control on the submitted sentences, limitations we address in Section~\ref{sec:conclusion}.
+\textbf{Source Selection.} We selected 10,000 French sentences from Tatoeba~\cite{tatoeba}\footnote{https://tatoeba.org}, a collaborative platform for collecting translated sentences contributed by people worldwide. Sentences were selected through uniform random sampling from the full set of available French-language entries on the platform, without filtering by topic, length, or domain. While Tatoeba provides diverse sentence structures and vocabulary, the sentences are not domain-specific, there is no quality control on the submitted sentences, limitations we address in Section~\ref{sec:conclusion}.
 
 \textbf{Translation Process.} We assembled a team of five native Adja speakers in the Couffo region of Benin, a region where Adja is predominantly spoken. The team included two translators, a government-accredited Adja language instructor and an experienced fluent speaker, and three transcribers, all native Adja speakers. 
 
@@ -65,18 +65,44 @@ The translation process proceeded as follows over a six-month period:
 
 This collaborative, manual process ensured high translation quality through direct involvement of native speakers with strong literacy in both French and Adja. While labor-intensive, this approach was necessitated by limited internet connectivity and varying levels of digital literacy in the region, common challenges in low-resource language documentation. Future work could explore digital tools to streamline data collection, though infrastructure barriers remain significant.
 
-\textbf{Data Processing and Quality Control.} Following digitization, we performed several quality control steps:
+\textbf{Data Processing and Quality Control.} Following digitization, sentence pairs were processed through a dedicated cleaning pipeline to standardize encoding, normalize spacing, and ensure punctuation consistency between the French source and Adja target. The pipeline applied the following steps in order:
+
 \begin{enumerate}
-    \item Verification of encoding consistency for Adja text
-    \item Review of digitized translations for transcription errors
-    \item Standardization of punctuation and formatting
+    \item \textbf{Unicode normalization (NFKC).} All text was normalized to NFKC form, resolving encoding inconsistencies such as composed vs.\ decomposed diacritics that arise when typing Adja characters on different keyboards.
+    \item \textbf{Spacing normalization.} Double spaces were collapsed; spaces before sentence-final punctuation (\texttt{.} \texttt{,} \texttt{!} \texttt{?} \texttt{;} \texttt{:}) were removed.
+    \item \textbf{Non-standard character normalization.} The Latin retroflex click \texttt{ǃ} (Unicode U+01C3), occasionally introduced by keyboards as a visually similar substitute, was replaced with standard ASCII \texttt{!}.
+    \item \textbf{Bidirectional punctuation consistency.} For each pair, sentence-final punctuation was checked in both directions: if the French sentence ends with \texttt{?} or \texttt{!}, the Adja sentence is required to match; mismatches detectable from interrogative function words are corrected automatically, and ambiguous cases are flagged for human review.
+    \item \textbf{Quotation mark matching.} If the French sentence contains guillemets (\texttt{«~»}) or standard double quotes, matching quotation marks are added to the Adja sentence.
 \end{enumerate}
 
-The use of two independent translators working from the same source material provided implicit quality validation, as both translators shared a common linguistic baseline and produced consistent translations.
+The use of two independent translators working from the same source material provided implicit quality validation, as both translators shared a common linguistic baseline and produced consistent translations. The cleaned corpus is referred to as the v2-normalized dataset and is used in all experiments reported in this paper.
 
 \subsection{Data Splits}
 
-We divided the 10,000 sentence pairs into training (8,000 sentences, 80\%), development (1,000 sentences, 10\%), and test (1,000 sentences, 10\%) sets. The splits were created through random sampling to ensure similar distributions across sets. The test set is held out for final evaluation and will serve as a standardized benchmark for future Adja MT research.
+We create two complementary splits from the same 10,000 sentence pairs.
+
+\textbf{Random split.} Pairs are shuffled uniformly at random (seed 42) and sliced 80/10/10, yielding 8,000 train / 1,000 dev / 1,000 test pairs.
+
+\textbf{Length-stratified split.} To ensure train, dev, and test sets share the same sentence-length distribution, we first bin all pairs by the length of the French source sentence: \textit{short} ($\leq$8 words), \textit{medium} (9--16 words), and \textit{long} ($>$16 words). We then sample 80/10/10 proportionally within each bin and concatenate the results, yielding 7,999 train / 999 dev / 1,002 test pairs. Table~\ref{tab:splits} reports the resulting distributions.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Split} & \textbf{Total} & \textbf{Short} & \textbf{Medium} & \textbf{Long} \\
+               &                & ($\leq$8)      & (9--16)         & ($>$16)       \\
+\midrule
+Train & 7,999 & 6,456 & 1,481 & 62 \\
+Dev   &   999 &   807 &   185 &  7 \\
+Test  & 1,002 &   807 &   186 &  9 \\
+\bottomrule
+\end{tabular}
+\caption{Sentence count by length stratum for the stratified split. All three sets share a mean French source length of 6.4 words.}
+\label{tab:splits}
+\end{table}
+
+Reporting results on both splits allows us to assess whether length distribution in the test set affects evaluation scores. The test sets are held out for final evaluation and will serve as standardized benchmarks for future Adja MT research.
 
 \subsection{Corpus Statistics}
 
@@ -122,9 +148,7 @@ moderate standard deviations (French: $\sigma=2.92$, Adja: $\sigma=3.18$),
 indicating a well-balanced mix of sentence complexities. The corpus
 comprises approximately 39\% short sentences ($\leq$5 words), 59\%
 medium-length sentences (6--15 words), and 1.5\% long sentences
-($>$15 words). This distribution ensures exposure to diverse syntactic
-structures while avoiding the data sparsity issues associated with
-very long sentences in low-resource contexts.
+($>$15 words). This distribution suggests exposure to a variety of syntactic structures, from simple clausal constructions in short sentences to more complex sentences with subordination and modification, while avoiding the data sparsity issues associated with very long sentences in low-resource contexts.
 
 \noindent\textbf{Lexical richness and morphological complexity.}
 Adja demonstrates notably higher lexical diversity than French, with
@@ -177,45 +201,15 @@ Table~\ref{tab:examples} shows representative sentence pairs from the corpus.
 
 \subsection{Models}
 
-We establish baseline results using two state-of-the-art approaches:
+We establish baseline results using three state-of-the-art approaches:
 
-\textbf{NLLB-200} \cite{nllbteam2022languageleftbehindscaling}: We fine-tune the NLLB-200 distilled model, initialized from Fon and Aja checkpoints (closely related Gbe languages), leveraging linguistic similarities for improved transfer learning. We select the checkpoint at 2,000 training steps based on validation loss, as continued training led to overfitting
+\textbf{NLLB-200} \cite{nllbteam2022languageleftbehindscaling}: We fine-tune the \texttt{nllb-200-distilled-600M} model, initialized from the Ewe (\texttt{ewe\_Latn}) language token as a proxy for Adja, leveraging cross-lingual transfer from the closest available Gbe language. We apply early stopping on chrF (patience 10 evaluations) to prevent overfitting.
 
-\textbf{ByT5} \cite{xue2022byt5tokenfreefuturepretrained}: We fine-tune ByT5-Large, a byte-level model that does not require language-specific tokenization, making it suitable for under-resourced languages.
+\textbf{mBART-50} \cite{liu2020multilingualdenoisingpretrainingneural}: We fine-tune \texttt{mbart-large-50-many-to-many-mmt}, initializing from the French (\texttt{fr\_XX}) source-language embedding as a starting point for the Adja target. We register a new \texttt{aj\_Latn} language token and resize the token embeddings accordingly.
 
-%The hyperparameters for each model are described in appendixes \ref{nllb-hyperparams} and \ref{byt5-hyperparams}. The results of the translation test were evaluated using BLEU \cite{papineni2002bleu} and chrF++ \cite{popovic-2015-chrf}. 
+\textbf{ByT5} \cite{xue2022byt5tokenfreefuturepretrained}: We fine-tune \texttt{byt5-base}, a byte-level model that requires no language-specific tokenization, making it well-suited for a language with limited preprocessing resources.
 
-NLLB models were trained for 30000 steps; ByT5 models for 1750 steps. The results of the translation test were evaluated using BLEU \cite{papineni2002bleu} and chrF++ \cite{popovic-2017-chrf}. 
-
-%\subsection{Training Details}
-
-%[I need to run Prof Rolando's code]
-
-%For NLLB:
-%\begin{itemize}
-%    \item Model: nllb-200-distilled-600M
-%    \item Learning rate: [X]
-%    \item Batch size: [X]
-%    \item Training epochs: [X]
-%    \item Hardware: [SPECIFY]
-%\end{itemize}
-
-%For ByT5:
-%\begin{itemize}
-%    \item Model: [SPECIFY]
-%    \item Learning rate: [X]
-%    \item Batch size: [X]
-%    \item Training epochs: [X]
-%    \item Hardware: [SPECIFY]
-%\end{itemize}
-
-%\subsection{Evaluation Metrics}
-
-%We evaluate using standard MT metrics:
-%\begin{itemize}
-%    \item BLEU \citep{BLEU-PAPER}
-%    \item chrF++ \citep{CHRF-PAPER}
-%\end{itemize}
+All three models are optimized with Adafactor (learning rate $1\times10^{-4}$, no relative step), batch size 16, and early stopping on validation chrF with patience 10. We train for up to 50 epochs per model. We run each configuration with 5 random seeds (42, 123, 456, 789, 1024) and report mean $\pm$ standard deviation. Results on both the random and length-stratified splits are reported. Evaluation uses BLEU \cite{papineni2002bleu} and chrF++ \cite{popovic-2017-chrf}.
 
 \subsection{Results}
 
@@ -224,18 +218,23 @@ Table~\ref{tab:results} presents our baseline results for both translation direc
 \begin{table}[t]  % [t] forces top of column
 \centering
 \small  % or \footnotesize for even smaller
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
 \toprule
-\multirow{}{}{\textbf{}} & \multicolumn{2}{c}{\textbf{FR→ADJ}} & \multicolumn{2}{c}{\textbf{ADJ→FR}} \\
-\cmidrule{} \cmidrule{}
-& BLEU & chrF++ & BLEU & chrF++ \\
+\textbf{Model} & \textbf{Split} & \multicolumn{2}{c}{\textbf{FR→ADJ}} & \multicolumn{2}{c}{\textbf{ADJ→FR}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+& & BLEU & chrF++ & BLEU & chrF++ \\
 \midrule
-NLLB (Fon) & 3.69 & 25.06 & 0.83 & 13.74 \\
-NLLB (Ewe) & 3.67 & 25.75 & 0.48 & 13.97 \\
-ByT5 & 3.14 & 25.64 & 11.60 & 31.95 \\
+NLLB-600M & random     & $4.5 \pm 0.2$ & $26.1 \pm 0.3$ & $\mathbf{11.8 \pm 0.6}$ & $30.3 \pm 0.5$ \\
+          & stratified & $4.7 \pm 0.2$ & $27.1 \pm 0.3$ & $13.5$\textsuperscript{*} & $\mathbf{31.5}$\textsuperscript{*} \\
+\addlinespace
+mBART-50  & random     & $3.4 \pm 0.3$ & $22.6 \pm 0.5$ & $8.7 \pm 0.1$ & $26.1 \pm 0.3$ \\
+          & stratified & $3.6 \pm 0.2$ & $23.8 \pm 0.3$ & -- & -- \\
+\addlinespace
+ByT5-base & random     & $4.3 \pm 0.5$ & $26.1 \pm 0.4$ & $11.5 \pm 0.9$\textsuperscript{$\dagger$} & $31.2 \pm 0.9$\textsuperscript{$\dagger$} \\
+          & stratified & $\mathbf{4.9 \pm 0.2}$ & $\mathbf{27.5 \pm 0.4}$ & -- & -- \\
 \bottomrule
 \end{tabular}
-\caption{Baseline MT results on the test set. Models selected via validation loss (Fon: 2K steps, Ewe: 3K steps).}
+\caption{Baseline MT results on the random and length-stratified test sets (mean $\pm$ std over 5 seeds). Best per direction in \textbf{bold}. \textsuperscript{*}Single seed (42). \textsuperscript{$\dagger$}4 seeds. --~=~pending.}
 \label{tab:results}
 \end{table}
 \section{Discussion and Conclusion}
@@ -247,6 +246,8 @@ We have presented the first publicly available parallel corpus and machine trans
 
 While this corpus represents an important first step, several limitations must be acknowledged:
 
+\textbf{Potential Data Overlap.} NLLB-200 was pre-trained on a large multilingual corpus that might includes Tatoeba data for many language pairs. However, since no Adja-language data existed in any public corpus at the time of NLLB's training, our Adja test references are not present in NLLB's training data. The French source sentences may appear in NLLB pre-training data (in French--English or other pairs), but this does not constitute target-side contamination for the French→Adja evaluation direction. ByT5 training dataset similarly contains no Adja data. We therefore consider the risk of meaningful data contamination to be negligible.
+
 \textbf{Source Data Quality.} Our French sentences originate from Tatoeba, a crowdsourced platform where any user can contribute translations. Tatoeba does not verify whether contributors are native speakers, nor does it enforce quality control measures beyond community reporting. Consequently, the source French sentences may contain grammatical errors, unnatural phrasing, or non-standard usage that could propagate into the Adja translations.
 
 \textbf{Lack of Domain Specificity.} The Tatoeba sentences cover random topics without thematic coherence, jumping from one subject to another without domain focus. This randomness limits the corpus's utility for domain-specific applications such as healthcare, education, or government services: contexts where machine translation would be most valuable to Adja speakers.
@@ -256,6 +257,8 @@ While this corpus represents an important first step, several limitations must b
 \textbf{Sentence-Level Scope.} Our corpus consists of isolated sentences rather than connected discourse. This limits its applicability for tasks requiring discourse-level understanding, such as document translation, conversational systems, or context-dependent interpretation.
 
 \textbf{Corpus Size.} While 10,000 sentences represents a significant achievement for a previously undocumented language, it remains small compared to the millions of sentence pairs typically used to train high-quality MT systems. The low BLEU scores we observe (Section~\ref{sec:experiments}) reflect this data scarcity.
+
+\textbf{Translation Direction.} Since our corpus was produced by translating French sources into Adja, future work collecting naturally produced Adja text and translating it into French would complement this resource and enable evaluation on both original-language directions.
 
 Despite these limitations, this corpus establishes a critical baseline. The challenges we identify point toward directions for future improvement rather than undermining the value of the current resource.
 
@@ -270,8 +273,7 @@ Several avenues exist for extending and improving this work:
 
 \textbf{Community Engagement.} Sustainable development of Adja language technology requires ongoing collaboration with the Adja-speaking community. We aim to establish feedback mechanisms for corpus refinement and to identify the most pressing language technology needs.
 
-\textbf{Data Availability.} We release our fine-tuned models on HuggingFace at [ANONYMOUS URL]. The dataset is available by request to ensure respectful use of this under-resourced language.
-% \url{https://github.com/FrejusGdm/adja-dataset-paper-oct-2025}
+\textbf{Data Availability.} The dataset and fine-tuned models are publicly available on GitHub at \url{[GITHUB URL]} and on Hugging Face at \url{[HF URL]} under a non-commercial license to protect against exploitative use while enabling academic research.
 
 This work represents the first step in a longer journey toward comprehensive language technology support for Adja. We hope this resource catalyzes further research and demonstrates the feasibility of building NLP tools for truly under-resourced languages.
 

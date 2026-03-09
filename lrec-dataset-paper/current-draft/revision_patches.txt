@@ -195,14 +195,14 @@ REPLACE WITH:
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
 & & BLEU & chrF++ & BLEU & chrF++ \\
 \midrule
-NLLB-600M & random     & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
-          & stratified & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+NLLB-600M & random     & $4.5 \pm 0.2$ & $26.1 \pm 0.3$ & $11.8 \pm 0.6$ & $30.3 \pm 0.5$ \\
+          & stratified & $4.7 \pm 0.2$ & $27.1 \pm 0.3$ & $13.5$\textsuperscript{*} & $31.5$\textsuperscript{*} \\
 \addlinespace
-mBART-50  & random     & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
-          & stratified & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+mBART-50  & random     & $3.4 \pm 0.3$ & $22.6 \pm 0.5$ & $8.7 \pm 0.1$ & $26.1 \pm 0.3$ \\
+          & stratified & $3.6 \pm 0.2$ & $23.8 \pm 0.3$ & XX & XX \\
 \addlinespace
-ByT5-base & random     & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
-          & stratified & [PENDING] & [PENDING] & [PENDING] & [PENDING] \\
+ByT5-base & random     & $4.3 \pm 0.5$ & $26.1 \pm 0.4$ & $11.5 \pm 0.9$\textsuperscript{$\dagger$} & $31.2 \pm 0.9$\textsuperscript{$\dagger$} \\
+          & stratified & $4.9 \pm 0.2$ & $\mathbf{27.5 \pm 0.4}$ & XX & XX \\
 \bottomrule
 \end{tabular}
 \caption{Baseline MT results on the random and length-stratified test sets (mean over 5 seeds: 42, 123, 456, 789, 1024). Best results per direction in \textbf{bold}.}
