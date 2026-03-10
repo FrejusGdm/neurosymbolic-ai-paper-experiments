@@ -1,193 +1,96 @@
-# Paper Patches — 2026-03-09
-# Based on all available results (HF Jobs + HPC rsync)
+# Paper Patches — 2026-03-10 (post-decontamination)
 # Paper: acl_latex.tex
+# All patches below have been APPLIED to acl_latex.tex.
 
 ================================================================
-PATCH 1: Fix Table 11 (tab:module_size_ctrl) — NO-PAST-1K now has 3 seeds
+APPLIED CHANGES (2026-03-10)
 ================================================================
 
-STATUS: READY TO APPLY
+After discovering and fixing test set contamination in Tables 9-13,
+all affected tables, figures, and inline text were updated with clean
+(decontaminated) results.
 
-NO-PAST-1K previously had only 1 seed (20.1, no std).
-Now has 3 seeds: 20.1, 18.9, 18.0 → mean 19.0±0.9
+Tables 5-8 (main results) were UNAFFECTED — always clean.
 
-OLD (line 516):
-\textsc{No-Past-1K}    & $20.1$                   & $28.9$          & $28.4$ \\
+--- Table 9 (tab:baselines) ---
+- TF-IDF-DIVERSE: 19.1±1.1 → 2.8±0.3 (train 1,800→1,614)
+- Added 4 combo rows: S4K+TFIDF2K, S4K+LENGTH2K, S4K+VOCAB2K, S4K+ALL
+- Restructured table with sub-headers for standalone vs combo conditions
+- Updated narrative paragraph discussing baselines
 
-NEW:
-\textsc{No-Past-1K}    & $19.0 \pm 0.9$          & $28.5 \pm 0.3$ & $28.0 \pm 0.3$ \\
+--- Table 10 (tab:module_loo) ---
+- FULL: 22.9±0.3 → 21.6±0.5 (train 3,823→3,410)
+- NO-PAST: 20.1±0.1 → 18.2±1.4 (train 3,010→2,688)
+- NO-NEGATION: 19.4±0.5 → 18.4±1.7 (train 3,024→2,713)
+- NO-QUESTIONS: 19.2±0.1 → 17.9±0.5 (train 3,240→2,895)
+- NO-FUTURE: 17.3±1.2 → 16.5±1.6 (train 3,009→2,692)
+- BASE-ONLY: 8.0±0.4 → 7.7±0.5 (train 815→760)
+- Updated all Delta values relative to new FULL (21.6)
 
-NOTE: This changes the ranking slightly. NO-PAST-1K (19.0) is now clearly
-above NO-QUEST-1K (18.9) but within noise. The narrative in the text
-doesn't need updating — the ordering is preserved.
+--- Table 11 (tab:module_size_ctrl) ---
+- All conditions updated with 3-seed clean results
+- FULL-1K: 21.1±1.6 → 19.8±0.8
+- NO-PAST-1K: 20.1 (1 seed) → 16.6±2.0 (3 seeds)
+- NO-QUEST-1K: 18.9±0.1 → 16.0±0.4
+- NO-NEG-1K: 17.9±1.7 → 15.5±3.2
+- NO-FUT-1K: 17.4±0.6 → 16.5±1.2
+- BASE-1K: 7.9±0.1 → 7.3±0.5
+- Caption updated to "Mean ± std over 3 seeds"
 
+--- Table 12 (tab:structure_matters) ---
+- PAIRS-INTACT: 22.9±0.3 → 21.6±0.5 (train 3,823→3,410)
+- PAIRS-BROKEN: 5.4±0.7 → 5.0±0.2 (train 3,823→3,397)
+- 1 verb: 2.8±0.5 → 3.1±0.1 (train 216→190)
+- 3 verbs: 5.2±1.0 → 4.5±0.7 (train ~600→~530)
+- 5 verbs: 8.1±1.2 → 7.7±1.2 (train ~950→~830)
+- 10 verbs: 22.9±0.3 → 21.6±0.5 (train 3,823→3,410)
 
-================================================================
-PATCH 2: New appendix table — Additive Module Ablation
-================================================================
+--- Table 13 (tab:pronoun) ---
+- ALL-8: 22.9±0.3 → 21.6±0.5
+- REDUCED-4: 19.5±5.2 → 20.8±0.2
+- SINGULAR-3: 18.6±2.4 → 20.0±0.2
+- MINIMAL-1: 15.9±2.3 → 6.5±1.8
 
-STATUS: READY TO APPLY
+--- Inline text updates ---
+- Fig 4 caption: -5.6→-5.1, 8.0→7.7
+- Module LOO paragraph: deltas updated (-5.6→-5.1, -3.8→-3.7, -3.5→-3.4, -2.8→-3.2)
+- Size-controlled paragraph: 21.1→19.8, 7.9→7.3
+- Fig 5 caption: 22.9→21.6, 5.4→5.0, 2.8→3.1
+- Pairs-Broken paragraph: 22.9→21.6, 5.4→5.0, 17.5→16.6, removed "3,823"
+- Verb paragraph: 2.8→3.1, 5.2→4.5, 8.1→7.7, 22.9→21.6
+- Pronoun paragraph: completely rewritten (old interpretation was wrong post-decontamination)
+- Baselines narrative: completely rewritten (TF-IDF 2.8 < random, combos complementary)
 
-Results from HF Jobs (3 seeds each):
-  ADD-M1M2      (M1+M2):         BLEU 10.3±0.2, chrF 23.3±0.2, chrF++ 21.6±0.2
-  ADD-M1M2M3    (M1+M2+M3):      BLEU 11.2±2.3, chrF 24.1±1.2, chrF++ 22.5±1.1
-  ADD-M1M2M3M4  (M1+M2+M3+M4):   BLEU 14.5±2.8, chrF 27.0±0.7, chrF++ 25.7±0.8
+--- New appendix table (tab:additive_ablation) ---
+- Added before \end{document}
+- 5 rows: BASE-ONLY, M1+M2, M1+M2+M3, M1+M2+M3+M4, FULL
 
-Cross-reference with existing results:
-  BASE-ONLY     (M1 only):        BLEU  8.0±0.4, chrF 22.9±0.0, chrF++ 21.1±0.0
-  FULL          (M1+M2+M3+M4+M5): BLEU 22.9±0.3, chrF 30.1±0.3, chrF++ 29.7±0.4
-
-INSERT BEFORE \end{document} (after the robustness figures, ~line 778):
-
-\section{Additive Module Ablation}
-\label{sec:appendix_additive}
-
-To complement the leave-one-out analysis (Table~\ref{tab:module_loo}),
-we perform an additive ablation that builds the structured corpus
-incrementally, starting with M1 (present tense) and adding one module
-at a time. Table~\ref{tab:additive_ablation} shows the results.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Modules} & \textbf{Train} & \textbf{BLEU}$\uparrow$ & \textbf{chrF}$\uparrow$ & \textbf{chrF++}$\uparrow$ \\
-\midrule
-M1               &    815 & $8.0 \pm 0.4$            & $22.9 \pm 0.0$ & $21.1 \pm 0.0$ \\
-M1+M2            &  1,292 & $10.3 \pm 0.2$           & $23.3 \pm 0.2$ & $21.6 \pm 0.2$ \\
-M1+M2+M3         &  1,944 & $11.2 \pm 2.3$           & $24.1 \pm 1.2$ & $22.5 \pm 1.1$ \\
-M1+M2+M3+M4      &  2,597 & $14.5 \pm 2.8$           & $27.0 \pm 0.7$ & $25.7 \pm 0.8$ \\
-M1+M2+M3+M4+M5   &  3,823 & $\mathbf{22.9 \pm 0.3}$ & $\mathbf{30.1 \pm 0.3}$ & $\mathbf{29.7 \pm 0.4}$ \\
-\bottomrule
-\end{tabular}
-\caption{Additive module ablation. Each row adds one module to the previous set.
-M4 (future tense) provides the largest single-step gain (+3.3 BLEU),
-and M5 (questions) provides the largest absolute jump (+8.4 BLEU).
-Mean $\pm$ std over 3 seeds (M1: 2 seeds).}
-\label{tab:additive_ablation}
-\end{table}
-
-The additive results reveal a non-linear pattern: M2 (negation) and M3
-(past tense) each contribute modestly (+2.3 and +0.9 BLEU respectively),
-but M4 (future tense) produces a larger jump (+3.3 BLEU), and M5
-(questions) produces the largest single gain (+8.4 BLEU). This suggests
-that question formation---which introduces word-order changes and
-interrogative particles---provides qualitatively different learning
-signal compared to purely morphological transformations.
-
-NARRATIVE NOTE: The expected result was that M4 would produce the
-largest single-step jump. Actual result: M5 (questions) is the biggest
-jump. This is actually MORE interesting — questions introduce syntactic
-reordering, not just morphological changes. Update the narrative
-accordingly.
-
+--- Figures regenerated ---
+- Archived old figures to experiments/results/figures_pre_decontamination_2026-03-09/
+- Regenerated fig4, fig5, fig8 (affected by contamination)
+- fig2, fig3, fig6 unchanged (use exp1/exp2 data, always clean)
 
 ================================================================
-PATCH 3: Table 9 (tab:baselines) — NEW COMBO ROWS
+PENDING
 ================================================================
 
-STATUS: RESULTS IN — but need sanity check (suspiciously high scores)
+1. Table 9: LENGTH-STRATIFIED and VOCAB-MAXIMIZED marked as TBD
+   - 4/5 LENGTH seeds and all 5 VOCAB seeds still used contaminated data
+   - Need to force re-upload decontaminated splits and relaunch 10 jobs
+   - After results arrive, update the TBD cells
 
-Results from HF Jobs (NLLB-600M, 5 seeds each):
-  STRUCT4K-TFIDF2K:        BLEU 29.0±6.0, chrF 44.1±4.2, chrF++ 42.8±4.1
-  STRUCT4K-LENGTH2K:       BLEU 33.6±4.8, chrF 46.6±3.3, chrF++ 45.4±3.3
-  STRUCT4K-VOCAB2K:        BLEU 35.1±2.2, chrF 48.2±1.5, chrF++ 46.9±1.5
-  STRUCT4K-ALL-BASELINES:  BLEU 41.1±8.9, chrF 55.6±6.4, chrF++ 54.1±6.5
-
-⚠️  WARNING: These scores are SUSPICIOUSLY HIGH.
-  - Best previous result was R10K+S4K at BLEU 22.5
-  - STRUCT4K-ALL-BASELINES at BLEU 41.1 is nearly DOUBLE that
-  - Variance is also very high (std 8.9 for ALL-BASELINES)
-  - Possible cause: TEST SET CONTAMINATION — structured test sentences
-    may overlap with the baseline training data (TF-IDF/Length/Vocab
-    were selected from 10K Tatoeba, and the test set may contain
-    Tatoeba sentences too)
-  - MUST CHECK: compare test.tsv against the baseline train splits
-    to see if there's overlap before putting these in the paper
-
-IF SCORES ARE VALID, add to tab:baselines (after Vocab-Max, before \midrule):
-\midrule
-\multicolumn{5}{l}{\textit{Structured + smart-selection combos}} \\
-\textsc{Struct-4K + TF-IDF-2K}   & 4,735 & $29.0 \pm 6.0$ & $44.1 \pm 4.2$ & $42.8 \pm 4.1$ \\
-\textsc{Struct-4K + Length-2K}    & 4,735 & $33.6 \pm 4.8$ & $46.6 \pm 3.3$ & $45.4 \pm 3.3$ \\
-\textsc{Struct-4K + Vocab-2K}    & 4,735 & $35.1 \pm 2.2$ & $48.2 \pm 1.5$ & $46.9 \pm 1.5$ \\
-\textsc{Struct-4K + All-3}       & 7,073 & $\mathbf{41.1 \pm 8.9}$ & $\mathbf{55.6 \pm 6.4}$ & $\mathbf{54.1 \pm 6.5}$ \\
-
+2. Table 14 (tab:robustness): NLLB-1.3B rows still show XX.X
+   - HPC model weights missing (only config/tokenizer present)
+   - Need to re-download NLLB-1.3B to HPC or run on HF Jobs
 
 ================================================================
-PATCH 4: Robustness table (tab:robustness) — NLLB-1.3B rows
+CONTAMINATION REFERENCE
 ================================================================
 
-STATUS: BLOCKED — zero NLLB-1.3B results on HPC
-
-The HPC has mbart-fr (233 files) and mbart-rand (233 files) but
-ZERO nllb-1.3b result files. Same root cause as Patch 3.
-
-Current placeholder in paper (lines 726-729):
-NLLB-1.3B        & Random-10K       & XX.X & XX.X \\
-                 & Structured-4K    & XX.X & XX.X \\
-                 & R6K+S4K          & XX.X & XX.X \\
-                 & R10K+S4K         & XX.X & XX.X \\
-
-TO FIX: Same as Patch 3 — need NLLB-1.3B model on HPC.
-Once model is restored, the existing sbatch scripts for exp1
-conditions should work (they ran mbart but not nllb-1.3b).
-
-ALTERNATIVELY: Remove the NLLB-1.3B rows and note "1.3B jobs
-still running" in the caption, or cut them entirely if deadline
-pressure requires it.
-
-
-================================================================
-PATCH 5: Narrative update for §Smart-Selection Baselines
-================================================================
-
-STATUS: READY (pending sanity check on Patch 3 scores)
-
-Update paragraph after Table 9 (line ~475). Current text discusses
-baselines vs structured only. New text should cover combos:
-
-"When structured data is combined with smart-selection baselines
-(Table~\ref{tab:baselines}, bottom), the complementary value is
-dramatic: \textsc{Struct-4K + Vocab-2K} achieves BLEU 35.1,
-and \textsc{Struct-4K + All-3} reaches BLEU 41.1---nearly double
-the best single-approach result. This confirms that structured
-and curated data address fundamentally different aspects of the
-learning problem: structured data provides grammatical signal
-through minimal pairs, while smart-selection provides lexical
-diversity from naturalistic text."
-
-NOTE: Only add this if Patch 3 scores pass the contamination check.
-
-
-================================================================
-SUMMARY — What can be applied RIGHT NOW
-================================================================
-
-1. PATCH 1 (Table 11 NO-PAST-1K fix) ........... READY
-2. PATCH 2 (Appendix additive ablation table) ... READY
-3. PATCH 3 (Table 9 combo rows) ................. RESULTS IN — needs contamination check first
-4. PATCH 4 (Robustness NLLB-1.3B) .............. BLOCKED (HPC model missing)
-5. PATCH 5 (Baselines narrative) ................ READY if Patch 3 passes check
-
-⚠️  CRITICAL CHECK BEFORE APPLYING PATCH 3:
-  Verify no test set overlap with baseline training data:
-    python3 -c "
-    import pandas as pd
-    test = set(pd.read_csv('experiments/data/splits/shared/test.tsv', sep='\t')['src_text'])
-    for name in ['STRUCT4K-TFIDF2K','STRUCT4K-LENGTH2K','STRUCT4K-VOCAB2K','STRUCT4K-ALL-BASELINES']:
-        train = set(pd.read_csv(f'experiments/data/splits/new_experiments/baselines/{name}/train.tsv', sep='\t')['src_text'])
-        overlap = test & train
-        print(f'{name}: {len(overlap)} overlapping sentences out of {len(test)} test')
-    "
-
-CONTAMINATION CHECK SCRIPT:
-  experiments/analysis/check_test_contamination.py
-  Run: python experiments/analysis/check_test_contamination.py
-
-NEXT ACTIONS:
-- Discuss contamination with professor (affects Table 9 — both old AND new rows)
-- Apply Patches 1 and 2 to acl_latex.tex (these are clean)
-- Decide how to handle Table 9 contamination before applying Patches 3/5
-- For Patch 4: need to restore NLLB-1.3B model weights on HPC
+Full audit: latex_experiments/contamination_audit.txt
+Briefing:   latex_experiments/decontamination_briefing.txt
+Email:      latex_experiments/email_to_professor.txt
+Comparison: experiments/results/summary/contamination_comparison.csv
+Archive:    experiments/data/splits/archive_pre_decontamination/
+Old results: experiments/results/summary/all_results_pre_decontamination.csv
+Old figures: experiments/results/figures_pre_decontamination_2026-03-09/

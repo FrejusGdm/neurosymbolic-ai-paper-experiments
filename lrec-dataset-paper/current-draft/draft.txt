@@ -1,5 +1,5 @@
 \abstract{
-We present the first parallel corpus for Adja, an under-resourced Gbe language spoken by approximately 1,000,000 people in Benin and Togo. The corpus contains 10,000 French-Adja sentence pairs, providing a foundation for machine translation research. We establish baseline results using fine-tuned NLLB and ByT5 models, achieving a chrF++ of 28 in the French→Adja direction, and up to a chrF++ of 31 in the Adja→French direction. This work represents the first public machine translation resource for Adja. It provides benchmarks for future studies on this under-resourced West African language. The dataset and fine-tuned models are publicly available at \url{[GITHUB URL]}.
+We present the first parallel corpus for Adja, an under-resourced Gbe language spoken by approximately 1,000,000 people in Benin and Togo. The corpus contains 10,000 French-Adja sentence pairs, providing a foundation for machine translation research. We establish baseline results using fine-tuned NLLB and ByT5 models, achieving a chrF++ of 28 in the French→Adja direction, and up to a chrF++ of 34 in the Adja→French direction. This work represents the first public machine translation resource for Adja. It provides benchmarks for future studies on this under-resourced West African language. The dataset and fine-tuned models are publicly available at \url{[GITHUB URL]}.
 \\ \newline \Keywords{Adja language, parallel corpus, machine translation, low-resource NLP, West African languages, Gbe languages}}
 
 
@@ -224,17 +224,17 @@ Table~\ref{tab:results} presents our baseline results for both translation direc
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
 & & BLEU & chrF++ & BLEU & chrF++ \\
 \midrule
-NLLB-600M & random     & $4.5 \pm 0.2$ & $26.1 \pm 0.3$ & $\mathbf{11.8 \pm 0.6}$ & $30.3 \pm 0.5$ \\
-          & stratified & $4.7 \pm 0.2$ & $27.1 \pm 0.3$ & $13.5$\textsuperscript{*} & $\mathbf{31.5}$\textsuperscript{*} \\
+NLLB-600M & random     & $4.5 \pm 0.1$ & $26.1 \pm 0.3$ & $11.8 \pm 0.6$ & $30.3 \pm 0.5$ \\
+          & stratified & $4.7 \pm 0.2$ & $27.1 \pm 0.3$ & $13.6 \pm 0.6$ & $31.8 \pm 0.3$ \\
 \addlinespace
 mBART-50  & random     & $3.4 \pm 0.3$ & $22.6 \pm 0.5$ & $8.7 \pm 0.1$ & $26.1 \pm 0.3$ \\
-          & stratified & $3.6 \pm 0.2$ & $23.8 \pm 0.3$ & -- & -- \\
+          & stratified & $3.6 \pm 0.2$ & $23.8 \pm 0.3$ & $9.5 \pm 0.7$ & $26.9 \pm 0.6$ \\
 \addlinespace
-ByT5-base & random     & $4.3 \pm 0.5$ & $26.1 \pm 0.4$ & $11.5 \pm 0.9$\textsuperscript{$\dagger$} & $31.2 \pm 0.9$\textsuperscript{$\dagger$} \\
-          & stratified & $\mathbf{4.9 \pm 0.2}$ & $\mathbf{27.5 \pm 0.4}$ & -- & -- \\
+ByT5-base & random     & $4.3 \pm 0.4$ & $26.1 \pm 0.4$ & $11.5 \pm 0.8$ & $31.2 \pm 0.8$ \\
+          & stratified & $\mathbf{4.9 \pm 0.2}$ & $\mathbf{27.5 \pm 0.4}$ & $\mathbf{14.3 \pm 0.7}$ & $\mathbf{33.7 \pm 0.7}$ \\
 \bottomrule
 \end{tabular}
-\caption{Baseline MT results on the random and length-stratified test sets (mean $\pm$ std over 5 seeds). Best per direction in \textbf{bold}. \textsuperscript{*}Single seed (42). \textsuperscript{$\dagger$}4 seeds. --~=~pending.}
+\caption{Baseline MT results on the random and length-stratified test sets (mean $\pm$ std over 5 seeds). Best per direction in \textbf{bold}.}
 \label{tab:results}
 \end{table}
 \section{Discussion and Conclusion}

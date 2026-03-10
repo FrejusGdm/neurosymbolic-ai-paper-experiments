@@ -162,6 +162,73 @@ tier_baselines_rerun() {
 }
 
 # ============================================================================
+# Tier: Ablations-rerun — Decontaminated ablation conditions (78 jobs)
+# Tables 10-13: module_loo, module_size_ctrl, minimal_pairs, verb, pronoun
+# ============================================================================
+tier_ablations_rerun() {
+    echo ""
+    echo "=========================================="
+    echo "ABLATIONS RERUN — decontaminated (78 jobs)"
+    echo "=========================================="
+    echo "NOTE: Run decontaminate_splits.py + upload_decontaminated_ablations.py first."
+
+    local seeds=(42 123 456)
+
+    # Table 10: module_loo (6 conditions × 3 seeds = 18 jobs)
+    echo ""
+    echo "--- Table 10: module_loo (18 jobs) ---"
+    local module_loo=("FULL" "NO-PAST" "NO-NEGATION" "NO-QUESTIONS" "NO-FUTURE" "BASE-ONLY")
+    for cond in "${module_loo[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "ablations/module_loo" "$cond" "$seed" "t4-small" "$MODEL_600M" "3h"
+        done
+    done
+
+    # Table 11: module_size_ctrl (6 conditions × 3 seeds = 18 jobs)
+    echo ""
+    echo "--- Table 11: module_size_ctrl (18 jobs) ---"
+    local size_ctrl=("FULL-1K" "NO-PAST-1K" "NO-QUEST-1K" "NO-NEG-1K" "NO-FUT-1K" "BASE-1K")
+    for cond in "${size_ctrl[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "ablations/module_size_ctrl" "$cond" "$seed" "t4-small" "$MODEL_600M" "3h"
+        done
+    done
+
+    # Table 12: minimal_pairs (2 conditions × 3 seeds = 6 jobs)
+    echo ""
+    echo "--- Table 12: minimal_pairs (6 jobs) ---"
+    local pairs=("PAIRS-INTACT" "PAIRS-BROKEN")
+    for cond in "${pairs[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "ablations/minimal_pairs" "$cond" "$seed" "t4-small" "$MODEL_600M" "3h"
+        done
+    done
+
+    # Table 12: verb diversity (8 conditions × 3 seeds = 24 jobs)
+    echo ""
+    echo "--- Table 12: verb diversity (24 jobs) ---"
+    local verbs=("1-VERB" "3-VERBS-a" "3-VERBS-b" "3-VERBS-c" "5-VERBS-a" "5-VERBS-b" "5-VERBS-c" "10-VERBS")
+    for cond in "${verbs[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "ablations/verb" "$cond" "$seed" "t4-small" "$MODEL_600M" "3h"
+        done
+    done
+
+    # Table 13: pronoun coverage (4 conditions × 3 seeds = 12 jobs)
+    echo ""
+    echo "--- Table 13: pronoun coverage (12 jobs) ---"
+    local pronouns=("ALL-8" "MINIMAL-1" "REDUCED-4" "SINGULAR-3")
+    for cond in "${pronouns[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "ablations/pronoun" "$cond" "$seed" "t4-small" "$MODEL_600M" "3h"
+        done
+    done
+
+    echo ""
+    echo "Done. After jobs complete, re-collect results and update Tables 10-13."
+}
+
+# ============================================================================
 # Main dispatch
 # ============================================================================
 TIER="${1:-all}"
@@ -171,6 +238,11 @@ case "$TIER" in
     additive)         tier_additive ;;
     table9)           tier_table9 ;;
     baselines-rerun)  tier_baselines_rerun ;;
+    ablations-rerun)  tier_ablations_rerun ;;
+    all-decontaminated)
+        tier_baselines_rerun
+        tier_ablations_rerun
+        ;;
     all)
         tier_fix
         echo ""
@@ -178,7 +250,7 @@ case "$TIER" in
         ;;
     *)
         echo "Unknown tier: $TIER"
-        echo "Usage: $0 [fix|additive|table9|baselines-rerun|all]"
+        echo "Usage: $0 [fix|additive|table9|baselines-rerun|ablations-rerun|all-decontaminated|all]"
         exit 1
         ;;
 esac
