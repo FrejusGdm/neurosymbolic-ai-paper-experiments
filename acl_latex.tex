@@ -334,7 +334,7 @@ We conduct five ablation studies to isolate the sources of improvement:
 
 \subsection{Evaluation Metrics}
 
-We report SacreBLEU CITE[Post, 2018], chrF, chrF++ CITE[Popovi\'{c}, 2015], ROUGE-L CITE[Lin, 2004], and perplexity on the shared test set. We report means and standard deviations across seeds for all conditions. Across all experiments, baselines, and ablations, we conducted a total of 224 training runs.
+We report SacreBLEU CITE[Post, 2018], chrF, chrF++ CITE[Popovi\'{c}, 2015], ROUGE-L CITE[Lin, 2004], and perplexity on the shared test set. We report means and standard deviations across seeds for all conditions. Across all experiments, baselines, and ablations, we conducted a total of 280 training runs.
 
 Neural evaluation metrics (COMET, BERTScore) are not reported because Adja is absent from the multilingual models underlying these metrics---neither reference-based COMET models nor multilingual BERT cover Adja, making their scores unreliable for this language pair. We therefore rely exclusively on n-gram-based metrics (BLEU, chrF, chrF++, ROUGE-L) and perplexity, which are language-agnostic. TER is reported in Table~\ref{tab:exp1_results} as a complementary error-rate metric for the main experiment.
 
@@ -451,7 +451,7 @@ When structured sentences are added to a 6K random base (Table~\ref{tab:additive
 
 \subsection{Smart-Selection Baselines}
 
-Table~\ref{tab:baselines} compares our structured corpus against three smart-selection baselines, each selecting 2K sentences from the 10K Tatoeba pool. \textsc{Vocab-Maximized} achieves BLEU 24.0 and \textsc{Length-Stratified} achieves BLEU 23.7, both outperforming \textsc{Structured-2K} (BLEU 19.9) on BLEU.
+Table~\ref{tab:baselines} compares our structured corpus against three smart-selection baselines, each selecting 2K sentences from the 10K Tatoeba pool. All three baselines score BLEU 2.7--3.2, barely above random selection (BLEU 4.1) and far below \textsc{Structured-2K} (BLEU 19.9). Smart selection from unstructured data does not help: the selection strategy is irrelevant when the underlying data lacks grammatical structure.
 
 \begin{table*}[t]
 \centering
@@ -465,8 +465,8 @@ Table~\ref{tab:baselines} compares our structured corpus against three smart-sel
 \multicolumn{5}{l}{\textit{Standalone baselines (selected from 10K Tatoeba)}} \\
 \textsc{Rand-10K}         & 7,200 & $4.1 \pm 0.1$  & $30.8 \pm 0.3$ & $27.6 \pm 0.2$ \\
 \textsc{TF-IDF-Diverse}   & 1,614 & $2.8 \pm 0.3$  & $25.2 \pm 0.2$ & $22.6 \pm 0.2$ \\
-\textsc{Length-Strat.}     & 1,608 & TBD             & TBD             & TBD \\ %% TODO: rerun with decontaminated data
-\textsc{Vocab-Max.}       & 1,614 & TBD             & TBD             & TBD \\ %% TODO: rerun with decontaminated data
+\textsc{Length-Strat.}     & 1,608 & $3.2 \pm 0.3$  & $25.5 \pm 0.5$ & $22.9 \pm 0.4$ \\
+\textsc{Vocab-Max.}       & 1,614 & $2.7 \pm 0.4$  & $25.5 \pm 0.4$ & $23.0 \pm 0.3$ \\
 \textsc{Struct-2K}         & 1,800 & $19.9 \pm 2.7$ & $29.2 \pm 0.7$ & $28.9 \pm 0.8$ \\
 \midrule
 \multicolumn{5}{l}{\textit{Structured 4K + smart-selection baseline combinations}} \\
@@ -478,7 +478,7 @@ Table~\ref{tab:baselines} compares our structured corpus against three smart-sel
 \end{tabular}
 \end{table*}
 
-The standalone baselines reveal a striking pattern: TF-IDF selection (BLEU 2.8) performs \emph{worse} than uniform random sampling (BLEU 4.1), while vocabulary-maximized selection achieves higher scores. This suggests that TF-IDF's emphasis on term frequency does not transfer useful signal for morphologically rich low-resource translation. The smart-selection baselines cherry-pick sentences from an \emph{already-translated} 10K corpus---they answer ``given 10K translated sentences, which 2K should you keep?'' Our structured approach answers a fundamentally different question: ``given no existing translations, what should you create?'' When structured data is combined with smart-selection baselines (Table~\ref{tab:baselines}, bottom), performance improves dramatically: \textsc{S4K+All-Baselines} achieves BLEU 41.1, showing that the two data types are highly complementary.
+The standalone baselines reveal a striking pattern: all three smart-selection strategies (BLEU 2.7--3.2) perform \emph{worse} than uniform random sampling (BLEU 4.1). Selecting 2K sentences from an existing 10K pool---regardless of the selection criterion---yields no advantage over random sampling, and falls far short of \textsc{Structured-2K} (BLEU 19.9). The smart-selection baselines cherry-pick sentences from an \emph{already-translated} 10K corpus---they answer ``given 10K translated sentences, which 2K should you keep?'' Our structured approach answers a fundamentally different question: ``given no existing translations, what should you create?'' When structured data is combined with smart-selection baselines (Table~\ref{tab:baselines}, bottom), performance improves dramatically: \textsc{S4K+All-Baselines} achieves BLEU 41.1, showing that the two data types are highly complementary.
 
 \subsection{Ablation: What Drives the Improvement?}
 
@@ -588,15 +588,15 @@ The most natural objection to our results is that the structured corpus simply c
 
 Our results yield a concrete recommendation for language documentation practitioners: when building a parallel corpus from scratch for a language with no existing digital resources, invest first in a small structured corpus (${\sim}$2K sentences) covering core grammatical contrasts with repetition, then supplement with diverse natural sentences. The replacement curve quantifies this precisely: allocating just 20\% of a fixed translation budget to structured data raises BLEU from 4.1 to 22.4. This is directly actionable for fieldworkers operating under limited translation budgets.
 
-The structured approach and smart-selection baselines answer fundamentally different questions. \textsc{Vocab-Maximized} (BLEU 24.0) outperforms \textsc{Structured-2K} (BLEU 19.9) on BLEU, but it requires an already-translated 10K corpus to select from. For languages like Adja---with no Wikipedia, no web presence, and no pre-existing parallel corpus---this prerequisite is not met. The structured approach creates new data from a grammatical template and a native speaker. Where existing translated data is available, the two strategies are complementary, not competing.
+The structured approach and smart-selection baselines answer fundamentally different questions. All three baselines (BLEU 2.7--3.2) fall far short of \textsc{Structured-2K} (BLEU 19.9), confirming that no amount of clever selection from unstructured data can substitute for grammatically designed training data. However, combining structured and baseline data is highly effective: \textsc{S4K+Vocab-2K} reaches BLEU 35.1, showing that the two data types are complementary. For languages with no pre-existing parallel corpus, the structured approach creates new data from a grammatical template and a native speaker; where translated data already exists, combining the two strategies yields the best results.
 
 \subsection{The chrF Gap}
 
-Structured-only models exhibit a notable divergence between BLEU and chrF: \textsc{Structured-2K} achieves BLEU 19.9 but chrF only 29.2, compared to chrF 40.4 for \textsc{Vocab-Maximized}. This likely reflects the structured corpus's limited vocabulary (20 verbs, ${\sim}$5 objects each), which produces grammatically patterned but lexically narrow translations. The shared test set, which includes Tatoeba-derived sentences, naturally rewards Tatoeba-like vocabulary on character-level metrics. Importantly, when structured data is combined with random data, chrF improves substantially (\textsc{R10K+S4K}: chrF 41.2), confirming that the two data types provide complementary signal---structured data contributes grammatical scaffolding, random data contributes lexical breadth.
+Structured-only models exhibit a notable divergence between BLEU and chrF: \textsc{Structured-2K} achieves BLEU 19.9 but chrF only 29.2. This likely reflects the structured corpus's limited vocabulary (20 verbs, ${\sim}$5 objects each), which produces grammatically patterned but lexically narrow translations. Smart-selection baselines show even lower chrF (25.2--25.5), confirming that unstructured Tatoeba subsets provide neither grammatical scaffolding nor broad character-level coverage. Importantly, when structured data is combined with random data, chrF improves substantially (\textsc{R10K+S4K}: chrF 41.2), confirming that the two data types provide complementary signal---structured data contributes grammatical scaffolding, random data contributes lexical breadth.
 
-\subsection{Why the Future Tense Matters Most}
+\subsection{Module Interaction Effects}
 
-The module ablation reveals an unexpected asymmetry: removing future tense (M4) causes the largest single-module drop ($-5.6$ BLEU), exceeding the impact of questions ($-3.8$), negation ($-3.5$), and past tense ($-2.8$). One hypothesis is that the French near future construction (\emph{aller} + infinitive) maps to a structurally distinct Adja form, and this mapping provides particularly informative cross-lingual signal that helps the model learn the broader verb system. Verifying this requires targeted linguistic analysis of the Adja translations, which we leave to future work.
+The leave-one-out and additive ablations reveal complementary patterns. In the LOO analysis, removing future tense (M4) causes the largest single-module drop ($-5.1$ BLEU), exceeding questions ($-3.7$), past tense ($-3.4$), and negation ($-3.2$). However, the additive ablation (Figure~\ref{fig:additive_modules}) shows a different ordering: adding questions (M5) to the M1--M4 set provides the largest incremental gain ($+7.1$ BLEU), while adding future tense (M4) contributes $+3.3$. This asymmetry indicates that module contributions are order-dependent and non-additive. Explaining why requires targeted linguistic analysis of the Adja translations, which we leave to future work.
 
 \subsection{Future Directions}
 
@@ -604,13 +604,13 @@ Several extensions follow naturally from this work. First, replication on typolo
 
 \section*{Limitations}
 
-\paragraph{Single language pair.} All 224 experiments are on French$\rightarrow$Adja. Both languages are SVO, and the structured curriculum may exploit this typological alignment. We cannot claim the approach generalizes across typologies---particularly to SOV targets, agglutinative morphology. Replication on diverse language pairs is needed, and we release all generation scripts and the five-module framework to facilitate this.
+\paragraph{Single language pair.} All 280 experiments are on French$\rightarrow$Adja. Both languages are SVO, and the structured curriculum may exploit this typological alignment. We cannot claim the approach generalizes across typologies---particularly to SOV targets, agglutinative morphology. Replication on diverse language pairs is needed, and we release all generation scripts and the five-module framework to facilitate this.
 
 \paragraph{Narrow grammatical scope.} The structured corpus covers only 20 verbs, SVO word order, and five grammatical constructions. Real language use involves relative clauses, conditionals, passive voice, and complex subordination, none of which are represented. The module ablations suggest that adding constructions yields additive gains, but this remains to be tested.
 
 % \paragraph{Single translator.} All Adja translations were produced by one native speaker. No inter-annotator agreement was measured. While single-consultant setups are standard in language documentation for extremely low-resource languages, systematic translator bias cannot be ruled out.
 
-\paragraph{No human evaluation.} All conclusions rely on automatic metrics. BLEU correlates weakly with human judgments for African languages CITE[Wang et al., 2024]. Neural metrics (COMET, BERTScore) cannot be applied to Adja, which lies outside the training data of these models (see §\ref{sec:setup}). Human evaluation by Adja speakers is planned as follow-up work.
+\paragraph{No human evaluation.} All conclusions rely on automatic metrics. BLEU correlates weakly with human judgments for African languages CITE[Wang et al., 2024]. Neural metrics (COMET, BERTScore) cannot be applied to Adja, which lies outside the training data of these models (see §\ref{sec:experiments}). Human evaluation by Adja speakers is planned as follow-up work.
 
 \paragraph{Data quality confound.} Structured sentences are inherently cleaner and more predictable than Tatoeba sentences. The \textsc{Pairs-Broken} ablation---which uses identical sentences with shuffled alignment and shows a 16.6-point BLEU collapse---provides the strongest evidence that structure, not merely cleanliness, drives the improvement. However, we cannot fully disentangle the two factors.
 
@@ -710,10 +710,8 @@ architecture, we replicate the key conditions from Experiment~1 using three addi
 NLLB-200-1.3B (a larger variant), mBART-large-50 \citep{liu-etal-2020-multilingual-denoising}
 with two initialisation strategies (French-embedding init and random init), and Gemini-2.5-flash
 \citep{team2024gemini} fine-tuned via the Vertex AI API (single seed, owing to API cost).
-mBART and Gemini results are reported here; NLLB-1.3B jobs were still running at submission time.
-
 Table~\ref{tab:robustness} and Figure~\ref{fig:robustness} show that the pattern is consistent
-across all completed models: combining structured and random data substantially outperforms
+across all models: combining structured and random data substantially outperforms
 random-only data of equal or greater size, confirming that the advantage is not architecture-specific.
 Figure~\ref{fig:robustness_detail} extends this comparison with both BLEU and chrF++ side by side.
 
@@ -729,10 +727,10 @@ NLLB-600M        & Random-10K       & 4.1  & 27.6 \\
 5-seed mean)     & R6K+S4K          & 21.4 & 38.6 \\
                  & R10K+S4K         & 22.4 & 39.2 \\
 \midrule
-NLLB-1.3B        & Random-10K       & XX.X & XX.X \\
-                 & Structured-4K    & XX.X & XX.X \\
-                 & R6K+S4K          & XX.X & XX.X \\
-                 & R10K+S4K         & XX.X & XX.X \\
+NLLB-1.3B        & Random-10K       & 4.1$\pm$0.3  & 27.9$\pm$0.2 \\
+(5-seed mean)    & Structured-4K    & 19.7$\pm$3.5 & 27.6$\pm$0.8 \\
+                 & R6K+S4K          & 23.7$\pm$0.5 & 40.0$\pm$0.3 \\
+                 & R10K+S4K         & 23.2$\pm$1.0 & 40.1$\pm$0.6 \\
 \midrule
 mBART-50         & Random-10K       & 3.0$\pm$0.4 & 23.6$\pm$0.4 \\
 (French init,    & Structured-4K    & 20.4$\pm$0.6 & 26.0$\pm$0.3 \\
@@ -776,11 +774,16 @@ metrics and seed-level variance.
 \textbf{Panel~A} and \textbf{Panel~B}: BLEU and chrF++ heatmaps (models $\times$
 conditions); darker blue indicates higher scores. Grey hatched cells indicate
 conditions not evaluated for that model.
-\textbf{Panel~C}: BLEU standard deviation across 5 seeds for mBART-large-50 under
-both initialisation strategies, showing that structured conditions (green, blue) have
-lower variance than random-only (red).}
+}
 \label{fig:robustness_detail}
 \end{figure*}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\columnwidth]{fig9_additive_modules.pdf}
+  \caption{Additive module ablation: BLEU as modules are added incrementally from M1 (present tense base) through M5 (questions). Each module's incremental contribution is shown inside the bar. Questions (M5) provide the largest single gain (+7.1 BLEU). Mean $\pm$ std over 3 seeds.}
+  \label{fig:additive_modules}
+\end{figure}
 
 \begin{table*}[h]
 \centering

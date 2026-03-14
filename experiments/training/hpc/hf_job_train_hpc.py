@@ -72,6 +72,10 @@ def parse_args():
     p.add_argument("--num-beams", type=int, default=5)
     p.add_argument("--eval-steps", type=int, default=200)
     p.add_argument("--log-steps", type=int, default=50)
+    p.add_argument("--save-checkpoint", action="store_true", default=True,
+                   help="Save best model checkpoint after evaluation (default: True)")
+    p.add_argument("--no-save-checkpoint", dest="save_checkpoint", action="store_false",
+                   help="Disable checkpoint saving")
     return p.parse_args()
 
 
@@ -239,8 +243,30 @@ def evaluate_val(model, tokenizer, val_data, device, src_lang, tgt_lang,
 # Test evaluation
 # ---------------------------------------------------------------------------
 
+def _compute_subset_metrics(predictions, references):
+    """Compute BLEU, chrF, chrF++ for a subset of predictions/references."""
+    if not predictions:
+        return {}
+    bleu = sacrebleu.corpus_bleu(predictions, [references])
+    chrf = sacrebleu.corpus_chrf(predictions, [references])
+    chrfpp = sacrebleu.corpus_chrf(predictions, [references], word_order=2)
+    return {"bleu": bleu.score, "chrf": chrf.score, "chrfpp": chrfpp.score,
+            "n_samples": len(predictions)}
+
+
+def _load_structured_sources(structured_file):
+    """Load the set of French source sentences from the structured data."""
+    sources = set()
+    with open(structured_file, "r", encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if len(parts) >= 2:
+                sources.add(preproc(parts[0]))
+    return sources
+
+
 def evaluate_test(model, tokenizer, test_file, src_lang, tgt_lang,
-                  batch_size, max_length, num_beams):
+                  batch_size, max_length, num_beams, structured_file=None):
     model.eval()
     device = model.device
 
@@ -330,6 +356,33 @@ def evaluate_test(model, tokenizer, test_file, src_lang, tgt_lang,
     except Exception:
         pass  # don't let perplexity failure break the whole job
 
+    # Subset evaluation: structured vs Tatoeba/random
+    if structured_file and os.path.exists(structured_file):
+        struct_sources = _load_structured_sources(structured_file)
+        struct_preds, struct_refs = [], []
+        random_preds, random_refs = [], []
+        for src, pred, ref in zip(sources, predictions, references):
+            if src in struct_sources:
+                struct_preds.append(pred)
+                struct_refs.append(ref)
+            else:
+                random_preds.append(pred)
+                random_refs.append(ref)
+
+        struct_metrics = _compute_subset_metrics(struct_preds, struct_refs)
+        random_metrics = _compute_subset_metrics(random_preds, random_refs)
+
+        for k, v in struct_metrics.items():
+            metrics[f"subset_structured_{k}"] = v
+        for k, v in random_metrics.items():
+            metrics[f"subset_tatoeba_{k}"] = v
+
+        print(f"  Subset eval: {len(struct_preds)} structured, {len(random_preds)} tatoeba")
+        if struct_metrics:
+            print(f"    Structured — BLEU: {struct_metrics['bleu']:.1f}, chrF++: {struct_metrics['chrfpp']:.1f}")
+        if random_metrics:
+            print(f"    Tatoeba    — BLEU: {random_metrics['bleu']:.1f}, chrF++: {random_metrics['chrfpp']:.1f}")
+
     return metrics
 
 
@@ -377,6 +430,7 @@ def main():
     train_file = os.path.join(args.data_dir, args.experiment, args.condition, "train.tsv")
     val_file = os.path.join(args.data_dir, args.experiment, args.condition, "val.tsv")
     test_file = os.path.join(args.data_dir, "shared", "test.tsv")
+    structured_file = os.path.join(args.data_dir, "shared", "structured_train.tsv")
 
     for f in [train_file, val_file, test_file]:
         if not os.path.exists(f):
@@ -502,7 +556,8 @@ def main():
     print("\nEvaluating on test set...")
     test_metrics = evaluate_test(
         model, tokenizer, test_file, src_lang, tgt_lang,
-        args.batch_size, args.max_length, args.num_beams
+        args.batch_size, args.max_length, args.num_beams,
+        structured_file=structured_file,
     )
     test_metrics["training_time_seconds"] = training_time
     test_metrics["experiment"] = args.experiment
@@ -538,6 +593,15 @@ def main():
         json.dump(test_metrics, f, indent=2)
 
     print(f"\nResults saved to: {result_path}")
+
+    # Save model checkpoint
+    if args.save_checkpoint:
+        checkpoint_dir = os.path.join(result_dir, "checkpoint")
+        print(f"\nSaving model checkpoint to {checkpoint_dir}...")
+        model.save_pretrained(checkpoint_dir)
+        tokenizer.save_pretrained(checkpoint_dir)
+        print("Checkpoint saved.")
+
     print("Done.")
 
 

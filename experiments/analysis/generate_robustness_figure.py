@@ -36,12 +36,14 @@ CONDITIONS = {
 # ── Model display order and labels ──
 MODEL_ORDER = [
     "NLLB-600M (main paper, 5-seed mean)",
+    "NLLB-1.3B",
     "mBART-50 (French init)",
     "mBART-50 (Random init)",
     "Gemini-2.5 (fine-tuned, seed 42)",
 ]
 MODEL_SHORT = {
     "NLLB-600M (main paper, 5-seed mean)": "NLLB\n600M",
+    "NLLB-1.3B":                           "NLLB\n1.3B",
     "mBART-50 (French init)":              "mBART\n(Fr-init)",
     "mBART-50 (Random init)":              "mBART\n(Rand-init)",
     "Gemini-2.5 (fine-tuned, seed 42)":   "Gemini\n2.5",

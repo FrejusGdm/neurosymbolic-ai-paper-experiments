@@ -229,6 +229,30 @@ tier_ablations_rerun() {
 }
 
 # ============================================================================
+# Tier: NLLB-1.3B exp1 — Robustness table (20 jobs)
+# ============================================================================
+tier_nllb_1_3b_exp1() {
+    echo ""
+    echo "=========================================="
+    echo "NLLB-1.3B EXP1 — Robustness table (20 jobs)"
+    echo "=========================================="
+    echo "Model: facebook/nllb-200-1.3B on a10g-large (OOM on a10g-small)"
+
+    local model="facebook/nllb-200-1.3B"
+    local conditions=("RANDOM-10K" "STRUCTURED-4K-ONLY" "RANDOM-6K_STRUCTURED-4K" "RANDOM-10K_STRUCTURED-4K")
+    local seeds=(42 123 456 789 2024)
+
+    for cond in "${conditions[@]}"; do
+        for seed in "${seeds[@]}"; do
+            launch_job "exp1" "$cond" "$seed" "a10g-large" "$model" "16h"
+        done
+    done
+
+    echo "Done. After jobs complete, run:"
+    echo "  python experiments/analysis/compute_robustness_table.py"
+}
+
+# ============================================================================
 # Main dispatch
 # ============================================================================
 TIER="${1:-all}"
@@ -239,6 +263,7 @@ case "$TIER" in
     table9)           tier_table9 ;;
     baselines-rerun)  tier_baselines_rerun ;;
     ablations-rerun)  tier_ablations_rerun ;;
+    nllb-1.3b-exp1)   tier_nllb_1_3b_exp1 ;;
     all-decontaminated)
         tier_baselines_rerun
         tier_ablations_rerun
@@ -250,7 +275,7 @@ case "$TIER" in
         ;;
     *)
         echo "Unknown tier: $TIER"
-        echo "Usage: $0 [fix|additive|table9|baselines-rerun|ablations-rerun|all-decontaminated|all]"
+        echo "Usage: $0 [fix|additive|table9|baselines-rerun|ablations-rerun|nllb-1.3b-exp1|all-decontaminated|all]"
         exit 1
         ;;
 esac

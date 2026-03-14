@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/josuegodeme/Downloads/neurosymbolic-ai-paper-experiments -name \"*.py\" -type f 2>/dev/null | xargs grep -l \"test.tsv\\\\|test_split\\\\|test_set\" | head -10)",
+      "Bash(find /Users/josuegodeme/Downloads/neurosymbolic-ai-paper-experiments -type f -name \"*.csv\" -o -name \"*.json\" 2>/dev/null | xargs grep -l \"STRUCT4K\\\\|ALL-BASELINES\" 2>/dev/null | head -10)",
+      "Bash(find /Users/josuegodeme/Downloads/neurosymbolic-ai-paper-experiments/experiments/results -type d -name \"*nllb*\" -o -name \"*600*\" 2>/dev/null | head -20)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "nia",
+    "exa"
+  ]
+}

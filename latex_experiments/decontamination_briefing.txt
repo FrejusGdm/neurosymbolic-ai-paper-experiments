@@ -69,28 +69,29 @@ Biggest score drops after removing leaked sentences and retraining:
 
   Condition              Contaminated  Clean   Drop   Why so big?
   -------------------------------------------------------------------
-  TF-IDF-DIVERSE             19.1       2.8   -16.3   Nearly all "skill"
-                                                       was memorization
+  VOCAB-MAXIMIZED            24.0       2.7   -21.3   100% memorization!
+  LENGTH-STRATIFIED          23.7       3.2   -20.5   100% memorization!
+  TF-IDF-DIVERSE             19.1       2.8   -16.3   100% memorization!
   MINIMAL-1 (pronoun)        15.9       6.5    -9.3   Tiny dataset, many
                                                        leaked sentences
   STRUCT4K-TFIDF2K           29.0      20.6    -8.4   TF-IDF component
                                                        was contaminated
-  LENGTH-STRATIFIED          23.7      19.6    -4.1   Moderate overlap
   NO-QUEST-1K                18.9      16.0    -2.9   1K datasets hit hard
   FULL (module_loo)          22.9      21.6    -1.3   Large dataset absorbs
                                                        the loss better
-
-  VOCAB-MAXIMIZED            24.0      24.0     0.0   Barely affected!
   (all Tables 5-8)            ---       ---     0.0   Always clean
 
 
-KEY INSIGHT: TF-IDF-DIVERSE dropped from 19.1 to 2.8 BLEU. This means the
-original TF-IDF score of 19.1 was almost ENTIRELY from memorized test
-sentences. The actual translation ability of a model trained on 1,614
-TF-IDF-selected Tatoeba sentences is ~2.8 BLEU — similar to random selection.
+KEY INSIGHT: ALL THREE standalone baselines collapsed to ~2.7-3.2 BLEU.
+The original scores (19.1, 23.7, 24.0) were ENTIRELY from memorized test
+sentences. The actual translation ability of models trained on ~1,600
+smartly-selected Tatoeba sentences is ~3 BLEU — WORSE than random (4.1).
 
-This STRENGTHENS our paper's argument: smart selection from random data
-doesn't help. Only structured, linguistically-designed data helps.
+This MASSIVELY STRENGTHENS our paper's argument:
+  1. Smart selection from unstructured data does NOT help — at all
+  2. There is no meaningful difference between selection strategies
+  3. Only structured, linguistically-designed data helps (BLEU 19.9)
+  4. The structured approach is ~6-7× better than any baseline
 
 ============================================================================
 4. WHAT'S AFFECTED vs. WHAT'S CLEAN IN THE PAPER
@@ -156,11 +157,18 @@ BEFORE (contaminated):
   - Reviewers could argue: "Smart selection from Tatoeba works just as well"
 
 AFTER (clean):
-  - TF-IDF baseline scores 2.8 BLEU (worse than random!)
-  - LENGTH-STRATIFIED: 19.6, VOCAB-MAXIMIZED: 24.0
-  - This shows that selection method matters enormously
-  - Structured data (BLEU ~21) vastly outperforms most baselines
-  - VOCAB-MAXIMIZED at 24.0 is the only competitive baseline
+  - TF-IDF-DIVERSE:     2.8±0.3 BLEU  (was 19.1 — dropped 16.3!)
+  - LENGTH-STRATIFIED:   3.2±0.3 BLEU  (was 23.7 — dropped 20.5!)
+  - VOCAB-MAXIMIZED:     2.7±0.4 BLEU  (was 24.0 — dropped 21.3!)
+  - ALL three baselines are now ~2.7-3.2 BLEU — nearly identical
+  - This is BELOW random selection (BLEU 4.1)!
+  - Structured data (BLEU 19.9) is 6-7× better than any baseline
+  - Smart selection from unstructured data does NOT help at all
+
+The contamination was responsible for the ENTIRE apparent advantage of
+VOCAB-MAXIMIZED and LENGTH-STRATIFIED. Without leaked test sentences,
+there is zero meaningful difference between TF-IDF, length-stratified,
+and vocabulary-maximized selection. All perform worse than random.
 
 The ablation tables (10-13) show the same relative patterns with slightly
 lower absolute numbers. The interpretations don't change — which modules
@@ -210,21 +218,28 @@ Collect:         python experiments/evaluation/collect_hf_results.py \
                    --results-repo JosueG/adja-nmt-results --output-dir experiments/results
 
 ============================================================================
-10. OPEN QUESTIONS FOR PROFESSOR
+10. OPEN QUESTIONS FOR PROFESSOR (updated 2026-03-11)
 ============================================================================
 
-1. The LENGTH-STRATIFIED baseline has one outlier seed (456) at BLEU 3.0
-   while others are 23-24. Should we investigate/rerun that seed?
+RESOLVED:
+  Q1. LENGTH-STRATIFIED seed 456 outlier (BLEU 3.0 vs 23-24)?
+  --> ANSWERED: The 23-24 seeds were contaminated! After decontamination,
+      ALL seeds are 2.8-3.4 BLEU. Seed 456 was the only clean one before.
 
-2. VOCAB-MAXIMIZED at 24.0 BLEU (clean) is now the strongest baseline —
-   higher than our structured conditions at ~21 BLEU. Should we discuss
-   why vocabulary diversity in Tatoeba selection outperforms our structured
-   approach in raw BLEU, even though the combo (STRUCT4K+VOCAB2K) at 35.1
-   shows they're complementary?
+  Q2. VOCAB-MAX at 24.0 outperforming structured?
+  --> ANSWERED: VOCAB-MAX is actually 2.7 BLEU after decontamination.
+      The 24.0 was entirely from memorized test sentences.
+      Structured (19.9) is ~7× better than all baselines (~3).
 
-3. The MINIMAL-1 pronoun condition dropped 9.3 BLEU because it lost 26%
-   of its training data. Is this still a fair comparison, or should we
-   note the size difference?
+STILL OPEN:
+  Q3. MINIMAL-1 pronoun dropped 9.3 BLEU because it lost 26% of training
+      data. Should we note the size difference in the paper?
 
-4. Do you want me to run the ablation conditions with 5 seeds instead of
-   3 for consistency with the baseline experiments?
+  Q4. Run ablation conditions with 5 seeds instead of 3?
+
+NEW:
+  Q5. All three baselines (2.7-3.2) are now BELOW random (4.1). This is
+      surprising. Should we discuss why smart selection performs worse than
+      random? Likely explanation: the 10K Tatoeba pool was selected to be
+      diverse, so random sampling from it already captures diversity, while
+      "smart" selection of only 2K sentences may reduce that diversity.

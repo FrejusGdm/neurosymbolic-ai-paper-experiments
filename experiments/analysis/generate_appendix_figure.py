@@ -27,12 +27,14 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Display order ──
 MODEL_ORDER = [
     "NLLB-600M (main paper, 5-seed mean)",
+    "NLLB-1.3B",
     "mBART-50 (French init)",
     "mBART-50 (Random init)",
     "Gemini-2.5 (fine-tuned, seed 42)",
 ]
 MODEL_SHORT = {
     "NLLB-600M (main paper, 5-seed mean)": "NLLB\n600M",
+    "NLLB-1.3B":                           "NLLB\n1.3B",
     "mBART-50 (French init)":              "mBART\n(Fr-init)",
     "mBART-50 (Random init)":              "mBART\n(Rand-init)",
     "Gemini-2.5 (fine-tuned, seed 42)":   "Gemini\n2.5",
@@ -53,10 +55,12 @@ COND_SHORT = {
 
 # Panel C: only models with multiple seeds
 VARIANCE_MODELS = [
+    "NLLB-1.3B",
     "mBART-50 (French init)",
     "mBART-50 (Random init)",
 ]
 VARIANCE_MODEL_SHORT = {
+    "NLLB-1.3B":              "NLLB 1.3B",
     "mBART-50 (French init)":  "mBART (Fr-init)",
     "mBART-50 (Random init)":  "mBART (Rand-init)",
 }
@@ -198,7 +202,7 @@ def main():
     bleu_mat   = build_matrix(data, "bleu_mean",   MODEL_ORDER, COND_ORDER)
     chrfpp_mat = build_matrix(data, "chrfpp_mean", MODEL_ORDER, COND_ORDER)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
     fig.patch.set_facecolor("white")
 
     draw_heatmap(axes[0], bleu_mat, row_labels, col_labels,

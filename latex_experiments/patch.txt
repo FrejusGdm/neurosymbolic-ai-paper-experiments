@@ -70,18 +70,80 @@ Tables 5-8 (main results) were UNAFFECTED — always clean.
 - Regenerated fig4, fig5, fig8 (affected by contamination)
 - fig2, fig3, fig6 unchanged (use exp1/exp2 data, always clean)
 
+--- Inline text fixes (2026-03-10, late) ---
+- Limitations "Data quality confound": 17.5-point → 16.6-point BLEU collapse
+- Conclusion: 17.5-point → 16.6-point BLEU drop
+
 ================================================================
-PENDING
+APPLIED CHANGES (2026-03-11)
 ================================================================
 
-1. Table 9: LENGTH-STRATIFIED and VOCAB-MAXIMIZED marked as TBD
-   - 4/5 LENGTH seeds and all 5 VOCAB seeds still used contaminated data
-   - Need to force re-upload decontaminated splits and relaunch 10 jobs
-   - After results arrive, update the TBD cells
+--- Table 9 (tab:baselines) — LENGTH and VOCAB filled in ---
+- LENGTH-STRATIFIED: was TBD → 3.2±0.3 BLEU, 25.5±0.5 chrF, 22.9±0.4 chrF++
+- VOCAB-MAXIMIZED:   was TBD → 2.7±0.4 BLEU, 25.5±0.4 chrF, 23.0±0.3 chrF++
+- KEY FINDING: ALL three baselines now ~2.7-3.2 BLEU — nearly identical
+  and BELOW random selection (4.1 BLEU)
 
-2. Table 14 (tab:robustness): NLLB-1.3B rows still show XX.X
-   - HPC model weights missing (only config/tokenizer present)
-   - Need to re-download NLLB-1.3B to HPC or run on HF Jobs
+--- Narrative paragraphs rewritten (2026-03-11) ---
+- Baselines intro (§Smart-Selection Baselines):
+  OLD: "VOCAB-MAX achieves 24.0 and LENGTH-STRAT achieves 23.7, outperforming Structured-2K"
+  NEW: "All three baselines score 2.7-3.2, barely above random and far below Structured-2K"
+- Practical implications (§Practical Implications for Fieldwork):
+  OLD: "VOCAB-MAX (24.0) outperforms Structured-2K (19.9) on BLEU, but requires existing data"
+  NEW: "All three baselines (2.7-3.2) fall far short of Structured-2K (19.9)"
+- chrF gap (§The chrF Gap):
+  OLD: "chrF 40.4 for VOCAB-MAX" (contaminated)
+  NEW: "Smart-selection baselines show even lower chrF (25.2-25.5)"
+
+--- Figures regenerated (2026-03-11) ---
+- fig8 regenerated with final clean baseline data (all 3 at ~3 BLEU)
+
+--- Decontamination briefing updated ---
+- latex_experiments/decontamination_briefing.txt:
+  Updated §3 (impact table), §6 (paper story), §10 (open questions)
+  LENGTH: 23.7→3.2, VOCAB: 24.0→2.7 now reflected everywhere
+  Resolved Q1 (LENGTH outlier) and Q2 (VOCAB outperforming structured)
+
+================================================================
+LAUNCHED (2026-03-10) — awaiting results
+================================================================
+
+1. Table 9: LENGTH-STRATIFIED and VOCAB-MAXIMIZED — RESOLVED (2026-03-11)
+   - Force re-uploaded decontaminated splits to HF Hub
+   - All 15 baseline jobs completed (t4-small)
+   - Clean results:
+     LENGTH-STRATIFIED: was 23.7 (contaminated) → 3.2±0.3 BLEU (train 1,608)
+     VOCAB-MAXIMIZED: was 24.0 (contaminated) → 2.7±0.4 BLEU (train 1,614)
+     TF-IDF-DIVERSE: confirmed 2.8±0.3 BLEU (unchanged from earlier clean run)
+   - ALL three baselines now ~2.7-3.2 BLEU — nearly identical, far below structured (19.9)
+   - Rewrote baselines narrative, practical implications, and chrF gap paragraphs
+   - Old narrative claimed VOCAB-MAX outperformed structured; now all baselines << structured
+
+2. Table 14 (tab:robustness): NLLB-1.3B exp1 — RESOLVED (2026-03-12)
+   - HPC model weights missing → ran on HF Jobs instead
+   - First launch on a10g-small: all 20 OOMKilled → relaunched on a10g-large
+   - All 20 jobs completed. Results:
+     RANDOM-10K:       4.1±0.3 BLEU, 27.9±0.2 chrF++
+     STRUCTURED-4K:   19.7±3.5 BLEU, 27.6±0.8 chrF++
+     R6K+S4K:         23.7±0.5 BLEU, 40.0±0.3 chrF++
+     R10K+S4K:        23.2±1.0 BLEU, 40.1±0.6 chrF++
+   - Pattern matches 600M and mBART: structured+random >> random-only
+   - XX.X placeholders replaced in table
+   - Removed "NLLB-1.3B jobs were still running" from text
+   - NOTE: NLLB-1.3B initially overwrote 600M exp1 results on HF Hub — FIXED:
+     (a) Fixed hf_job_train.py: non-default models now upload to model-prefixed paths
+         (e.g., nllb-1.3b/exp1/... instead of exp1/...). 600M keeps original path.
+     (b) Restored 600M results from HF Hub git history (revision 295fbe0bb389)
+     (c) Moved 1.3B results to nllb-1.3b/exp1/ prefix on HF Hub
+     (d) Re-collected: 280 total rows, both models coexist correctly
+
+================================================================
+CONTAMINATION AUDIT (2026-03-10)
+================================================================
+
+Professor requested clean audit trail before submissions.
+Full audit saved to: latex_experiments/contamination_audit_final.txt
+Result: 64 clean conditions (0% overlap), 29 archived conditions (expected contamination)
 
 ================================================================
 CONTAMINATION REFERENCE

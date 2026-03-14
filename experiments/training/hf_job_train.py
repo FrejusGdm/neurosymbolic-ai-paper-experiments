@@ -97,6 +97,7 @@ WARMUP_STEPS = int(os.environ.get("WARMUP_STEPS", "500"))
 NUM_BEAMS = int(os.environ.get("NUM_BEAMS", "5"))
 EVAL_STEPS = int(os.environ.get("EVAL_STEPS", "200"))
 LOG_STEPS = int(os.environ.get("LOG_STEPS", "50"))
+SAVE_CHECKPOINT = os.environ.get("SAVE_CHECKPOINT", "1") == "1"
 
 # Auto-detect lang token format based on model family
 _model_lower = MODEL_NAME.lower()
@@ -234,6 +235,7 @@ def download_data():
     train_path = f"{EXPERIMENT}/{CONDITION}/train.tsv"
     val_path = f"{EXPERIMENT}/{CONDITION}/val.tsv"
     test_path = "shared/test.tsv"
+    structured_path = "shared/structured_train.tsv"
 
     print(f"Downloading data from {DATASET_REPO}...")
     print(f"  Train: {train_path}")
@@ -253,7 +255,17 @@ def download_data():
         repo_type="dataset", token=token, local_dir=data_dir,
     )
 
-    return train_file, val_file, test_file
+    # Download structured data for subset evaluation
+    structured_file = None
+    try:
+        structured_file = hf_hub_download(
+            repo_id=DATASET_REPO, filename=structured_path,
+            repo_type="dataset", token=token, local_dir=data_dir,
+        )
+    except Exception:
+        print("  Note: structured_train.tsv not found, subset eval will be skipped")
+
+    return train_file, val_file, test_file, structured_file
 
 
 # ---------------------------------------------------------------------------
@@ -318,7 +330,29 @@ def evaluate_val(model, tokenizer, val_data, device, num_samples=200):
 # Test evaluation
 # ---------------------------------------------------------------------------
 
-def evaluate_test(model, tokenizer, test_file):
+def _compute_subset_metrics(predictions, references):
+    """Compute BLEU, chrF, chrF++ for a subset of predictions/references."""
+    if not predictions:
+        return {}
+    bleu = sacrebleu.corpus_bleu(predictions, [references])
+    chrf = sacrebleu.corpus_chrf(predictions, [references])
+    chrfpp = sacrebleu.corpus_chrf(predictions, [references], word_order=2)
+    return {"bleu": bleu.score, "chrf": chrf.score, "chrfpp": chrfpp.score,
+            "n_samples": len(predictions)}
+
+
+def _load_structured_sources(structured_file):
+    """Load the set of French source sentences from the structured data."""
+    sources = set()
+    with open(structured_file, "r", encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if len(parts) >= 2:
+                sources.add(preproc(parts[0]))
+    return sources
+
+
+def evaluate_test(model, tokenizer, test_file, structured_file=None):
     """Generate translations on test set and compute metrics."""
     model.eval()
     device = model.device
@@ -393,7 +427,7 @@ def evaluate_test(model, tokenizer, test_file):
         total_tokens += n_tokens
     perplexity = math.exp(total_nll / total_tokens) if total_tokens > 0 else float("inf")
 
-    return {
+    result = {
         "test_bleu": bleu.score,
         "test_chrf": chrf.score,
         "test_chrfpp": chrfpp.score,
@@ -403,6 +437,35 @@ def evaluate_test(model, tokenizer, test_file):
         "test_bleu_signature": str(bleu),
         "test_n_samples": len(predictions),
     }
+
+    # Subset evaluation: structured vs Tatoeba/random
+    if structured_file and os.path.exists(structured_file):
+        struct_sources = _load_structured_sources(structured_file)
+        struct_preds, struct_refs = [], []
+        random_preds, random_refs = [], []
+        for src, pred, ref in zip(sources, predictions, references):
+            if src in struct_sources:
+                struct_preds.append(pred)
+                struct_refs.append(ref)
+            else:
+                random_preds.append(pred)
+                random_refs.append(ref)
+
+        struct_metrics = _compute_subset_metrics(struct_preds, struct_refs)
+        random_metrics = _compute_subset_metrics(random_preds, random_refs)
+
+        for k, v in struct_metrics.items():
+            result[f"subset_structured_{k}"] = v
+        for k, v in random_metrics.items():
+            result[f"subset_tatoeba_{k}"] = v
+
+        print(f"  Subset eval: {len(struct_preds)} structured, {len(random_preds)} tatoeba")
+        if struct_metrics:
+            print(f"    Structured — BLEU: {struct_metrics['bleu']:.1f}, chrF++: {struct_metrics['chrfpp']:.1f}")
+        if random_metrics:
+            print(f"    Tatoeba    — BLEU: {random_metrics['bleu']:.1f}, chrF++: {random_metrics['chrfpp']:.1f}")
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -419,7 +482,15 @@ def upload_results(metrics):
     except Exception as e:
         print(f"Note: repo creation returned: {e}")
 
-    result_path = f"{EXPERIMENT}/{CONDITION}/seed{SEED}/test_metrics.json"
+    # Model slug prefix: non-default models get their own namespace to avoid overwrites
+    _model_slug = ""
+    if "1.3B" in MODEL_NAME or "1.3b" in MODEL_NAME:
+        _model_slug = "nllb-1.3b/"
+    elif "mbart" in MODEL_NAME.lower():
+        _model_slug = "mbart/"
+    # 600M (default) → no prefix, backward compatible
+
+    result_path = f"{_model_slug}{EXPERIMENT}/{CONDITION}/seed{SEED}/test_metrics.json"
     metrics_json = json.dumps(metrics, indent=2)
 
     print(f"Uploading results to {RESULTS_REPO}/{result_path}...")
@@ -457,7 +528,7 @@ def main():
     set_seed(SEED)
 
     # Download data
-    train_file, val_file, test_file = download_data()
+    train_file, val_file, test_file, structured_file = download_data()
 
     # Load model + tokenizer
     print(f"\nLoading model: {MODEL_NAME}")
@@ -579,7 +650,7 @@ def main():
 
     # Evaluate on test set
     print("\nEvaluating on test set...")
-    test_metrics = evaluate_test(model, tokenizer, test_file)
+    test_metrics = evaluate_test(model, tokenizer, test_file, structured_file)
     test_metrics["training_time_seconds"] = training_time
     test_metrics["experiment"] = EXPERIMENT
     test_metrics["condition"] = CONDITION
@@ -606,6 +677,32 @@ def main():
 
     # Upload results
     upload_results(test_metrics)
+
+    # Save and upload model checkpoint
+    if SAVE_CHECKPOINT:
+        checkpoint_dir = "/tmp/checkpoint"
+        print(f"\nSaving model checkpoint to {checkpoint_dir}...")
+        model.save_pretrained(checkpoint_dir)
+        tokenizer.save_pretrained(checkpoint_dir)
+
+        token = os.environ.get("HF_TOKEN")
+        api = HfApi(token=token)
+
+        _model_slug = ""
+        if "1.3B" in MODEL_NAME or "1.3b" in MODEL_NAME:
+            _model_slug = "nllb-1.3b/"
+        elif "mbart" in MODEL_NAME.lower():
+            _model_slug = "mbart/"
+
+        ckpt_repo_path = f"{_model_slug}{EXPERIMENT}/{CONDITION}/seed{SEED}/checkpoint"
+        print(f"Uploading checkpoint to {RESULTS_REPO}/{ckpt_repo_path}...")
+        api.upload_folder(
+            folder_path=checkpoint_dir,
+            path_in_repo=ckpt_repo_path,
+            repo_id=RESULTS_REPO,
+            repo_type="dataset",
+        )
+        print("Checkpoint upload complete.")
 
     print("\nDone.")
 

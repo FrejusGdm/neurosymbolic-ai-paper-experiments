@@ -611,7 +611,7 @@ def fig_heatmap_composition(df):
 # ── Figure 8: Baselines comparison ──────────────────────────────────────────
 
 def fig8_baselines(df):
-    """Compare baselines vs random 10K vs structured conditions."""
+    """Compare baselines vs random 10K vs structured conditions, including combos."""
     baselines = df[df["experiment"] == "baselines"].copy()
     exp1 = df[df["experiment"] == "exp1"].copy()
 
@@ -624,11 +624,16 @@ def fig8_baselines(df):
     combined = pd.concat([baselines, ref_conds])
     combined_agg = agg(combined, ["condition"])
 
+    # Standalone + combo order
     order = ["RANDOM-10K", "TF-IDF-DIVERSE", "LENGTH-STRATIFIED",
-             "VOCAB-MAXIMIZED", "STRUCTURED-2K"]
+             "VOCAB-MAXIMIZED", "STRUCTURED-2K",
+             "STRUCT4K-TFIDF2K", "STRUCT4K-LENGTH2K",
+             "STRUCT4K-VOCAB2K", "STRUCT4K-ALL-BASELINES"]
     combined_agg["sort_key"] = combined_agg["condition"].apply(
         lambda c: order.index(c) if c in order else 99)
     combined_agg = combined_agg.sort_values("sort_key")
+    # Drop conditions not in our order
+    combined_agg = combined_agg[combined_agg["sort_key"] < 99]
 
     color_map = {
         "RANDOM-10K": COLORS["random"],
@@ -636,46 +641,154 @@ def fig8_baselines(df):
         "LENGTH-STRATIFIED": COLORS["baseline"],
         "VOCAB-MAXIMIZED": COLORS["baseline"],
         "STRUCTURED-2K": COLORS["structured"],
+        "STRUCT4K-TFIDF2K": COLORS["combined"],
+        "STRUCT4K-LENGTH2K": COLORS["combined"],
+        "STRUCT4K-VOCAB2K": COLORS["combined"],
+        "STRUCT4K-ALL-BASELINES": COLORS["combined"],
     }
 
     labels = {
-        "RANDOM-10K": "Random 10K",
-        "TF-IDF-DIVERSE": "TF-IDF\nDiverse 2K",
-        "LENGTH-STRATIFIED": "Length\nStratified 2K",
-        "VOCAB-MAXIMIZED": "Vocab\nMaximized 2K",
-        "STRUCTURED-2K": "Structured 2K",
+        "RANDOM-10K": "Random\n10K",
+        "TF-IDF-DIVERSE": "TF-IDF\n2K",
+        "LENGTH-STRATIFIED": "Length\n2K",
+        "VOCAB-MAXIMIZED": "Vocab\n2K",
+        "STRUCTURED-2K": "Struct.\n2K",
+        "STRUCT4K-TFIDF2K": "S4K +\nTF-IDF",
+        "STRUCT4K-LENGTH2K": "S4K +\nLength",
+        "STRUCT4K-VOCAB2K": "S4K +\nVocab",
+        "STRUCT4K-ALL-BASELINES": "S4K +\nAll",
     }
 
-    fig, ax = plt.subplots(figsize=(7, 4))
-    x = range(len(combined_agg))
+    n_bars = len(combined_agg)
+    fig, ax = plt.subplots(figsize=(max(8, n_bars * 1.1), 4.5))
+    x = np.arange(n_bars)
     bars = ax.bar(x, combined_agg["bleu_mean"],
-                  yerr=combined_agg["bleu_std"], capsize=4,
+                  yerr=combined_agg["bleu_std"], capsize=3,
                   color=[color_map.get(c, "#999") for c in combined_agg["condition"]],
-                  edgecolor="white", linewidth=0.5, width=0.55)
+                  edgecolor="white", linewidth=0.5, width=0.6)
 
     for bar, (_, row) in zip(bars, combined_agg.iterrows()):
-        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + row["bleu_std"] + 0.5,
-                f"{row['bleu_mean']:.1f}", ha="center", fontsize=9, fontweight="bold")
+        ax.text(bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + row["bleu_std"] + 0.4,
+                f"{row['bleu_mean']:.1f}", ha="center", fontsize=8, fontweight="bold")
 
     ax.set_xticks(list(x))
-    ax.set_xticklabels([labels.get(c, c) for c in combined_agg["condition"]], fontsize=9)
+    ax.set_xticklabels([labels.get(c, c) for c in combined_agg["condition"]],
+                       fontsize=8, ha="center")
     ax.set_ylabel("BLEU")
-    ax.set_title("Smart Selection Baselines (all 2K except Random)")
-    ax.set_ylim(0, 30)
+    ax.set_title("Smart-Selection Baselines and Structured Combinations")
+
+    # Dynamic ylim based on data
+    max_val = (combined_agg["bleu_mean"] + combined_agg["bleu_std"]).max()
+    ax.set_ylim(0, max_val * 1.18)
+
+    # Vertical separator between standalone and combo groups
+    combo_conds = {"STRUCT4K-TFIDF2K", "STRUCT4K-LENGTH2K",
+                   "STRUCT4K-VOCAB2K", "STRUCT4K-ALL-BASELINES"}
+    cond_list = list(combined_agg["condition"])
+    for i, c in enumerate(cond_list):
+        if c in combo_conds and i > 0 and cond_list[i - 1] not in combo_conds:
+            ax.axvline(x=i - 0.5, color="#cccccc", linestyle="--", linewidth=1)
+            ax.text(i - 0.5, max_val * 1.12, "← standalone | combos →",
+                    ha="center", fontsize=7, color="#888888")
+            break
 
     # Legend
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor=COLORS["random"], label="Random"),
-        Patch(facecolor=COLORS["baseline"], label="Smart Selection"),
-        Patch(facecolor=COLORS["structured"], label="Structured"),
+        Patch(facecolor=COLORS["baseline"], label="Smart Selection (2K)"),
+        Patch(facecolor=COLORS["structured"], label="Structured (2K)"),
+        Patch(facecolor=COLORS["combined"], label="Struct 4K + Baseline"),
     ]
-    ax.legend(handles=legend_elements, loc="upper left", frameon=False)
+    ax.legend(handles=legend_elements, loc="upper left", frameon=False, fontsize=8)
 
+    plt.tight_layout()
     for fmt in ["pdf", "png"]:
         fig.savefig(os.path.join(OUT_DIR, f"fig8_baselines.{fmt}"))
     plt.close(fig)
     print("  [OK] Fig 8: Baselines comparison")
+
+
+# ── Figure 9: Additive Module Ablation ────────────────────────────────────────
+
+def fig9_additive_modules(df):
+    """Bar chart showing BLEU as modules are added incrementally (M1 → M1-M5)."""
+    add = df[df["experiment"] == "ablations/additive"].copy()
+    loo = df[df["experiment"] == "ablations/module_loo"].copy()
+
+    if add.empty:
+        print("  [SKIP] Fig 9: No additive ablation data")
+        return
+
+    # Get BASE-ONLY and FULL from module_loo
+    base = loo[loo["condition"] == "BASE-ONLY"]
+    full = loo[loo["condition"] == "FULL"]
+
+    # Build combined df
+    rows = []
+    if not base.empty:
+        rows.append(base.assign(condition="BASE-ONLY"))
+    rows.append(add[add["condition"] == "ADD-M1M2"])
+    rows.append(add[add["condition"] == "ADD-M1M2M3"])
+    rows.append(add[add["condition"] == "ADD-M1M2M3M4"])
+    if not full.empty:
+        rows.append(full.assign(condition="FULL"))
+
+    combined = pd.concat(rows)
+    combined_agg = agg(combined, ["condition"])
+
+    order = ["BASE-ONLY", "ADD-M1M2", "ADD-M1M2M3", "ADD-M1M2M3M4", "FULL"]
+    combined_agg["sort_key"] = combined_agg["condition"].apply(
+        lambda c: order.index(c) if c in order else 99)
+    combined_agg = combined_agg.sort_values("sort_key")
+
+    labels = {
+        "BASE-ONLY": "M1\n(Base)",
+        "ADD-M1M2": "M1+M2\n(+Negation)",
+        "ADD-M1M2M3": "M1–M3\n(+Past)",
+        "ADD-M1M2M3M4": "M1–M4\n(+Future)",
+        "FULL": "M1–M5\n(+Questions)",
+    }
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    x = np.arange(len(combined_agg))
+
+    # Gradient colors from light to dark blue
+    n = len(combined_agg)
+    cmap = plt.cm.Blues
+    bar_colors = [cmap(0.3 + 0.6 * i / (n - 1)) for i in range(n)]
+
+    bars = ax.bar(x, combined_agg["bleu_mean"],
+                  yerr=combined_agg["bleu_std"], capsize=4,
+                  color=bar_colors,
+                  edgecolor="white", linewidth=0.5, width=0.6)
+
+    # Value labels and delta annotations
+    prev_bleu = None
+    for i, (bar, (_, row)) in enumerate(zip(bars, combined_agg.iterrows())):
+        bleu = row["bleu_mean"]
+        ax.text(bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + row["bleu_std"] + 0.4,
+                f"{bleu:.1f}", ha="center", fontsize=10, fontweight="bold")
+        if prev_bleu is not None:
+            delta = bleu - prev_bleu
+            ax.annotate(f"+{delta:.1f}",
+                        xy=(bar.get_x() + bar.get_width() / 2, bleu / 2),
+                        ha="center", fontsize=8, color="#666666", fontstyle="italic")
+        prev_bleu = bleu
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([labels.get(c, c) for c in combined_agg["condition"]], fontsize=9)
+    ax.set_ylabel("BLEU")
+    ax.set_title("Additive Module Ablation: Incremental Contribution of Each Module")
+    ax.set_ylim(0, combined_agg["bleu_mean"].max() * 1.25)
+
+    plt.tight_layout()
+    for fmt in ["pdf", "png"]:
+        fig.savefig(os.path.join(OUT_DIR, f"fig9_additive_modules.{fmt}"))
+    plt.close(fig)
+    print("  [OK] Fig 9: Additive module ablation")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -700,6 +813,7 @@ def main():
     fig6_additive_curve(df)
     fig7_exp1_overview(df)
     fig8_baselines(df)
+    fig9_additive_modules(df)
     fig_heatmap_composition(df)
 
     print(f"\nAll figures saved to {OUT_DIR}/")

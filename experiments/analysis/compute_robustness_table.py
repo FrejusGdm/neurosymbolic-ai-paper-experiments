@@ -133,6 +133,11 @@ def main():
         help="Local directory with rsync'd HPC results"
     )
     parser.add_argument(
+        "--raw-dir",
+        default="experiments/results/raw",
+        help="Local directory with HF Jobs results (nllb-1.3b/exp1/...)"
+    )
+    parser.add_argument(
         "--gemini-dir",
         default="experiments/results/gemini",
         help="Local directory with Gemini results"
@@ -150,6 +155,7 @@ def main():
     args = parser.parse_args()
 
     hpc_dir    = Path(args.hpc_dir)
+    raw_dir    = Path(args.raw_dir)
     gemini_dir = Path(args.gemini_dir)
     output     = Path(args.output)
     exp        = args.experiment
@@ -161,6 +167,16 @@ def main():
     else:
         hpc_results = {}
         print(f"WARNING: HPC dir not found: {hpc_dir} — run rsync first", file=sys.stderr)
+
+    # ── Load raw results (HF Jobs, e.g. nllb-1.3b/exp1) ──
+    if raw_dir.exists():
+        raw_results = load_hpc_results(raw_dir)
+        print(f"Loaded {len(raw_results)} raw result entries from {raw_dir}")
+        for key, val in raw_results.items():
+            if key not in hpc_results:
+                hpc_results[key] = val
+    else:
+        print(f"INFO: Raw dir not found: {raw_dir}", file=sys.stderr)
 
     # ── Load Gemini results ──
     gemini_results = load_gemini_results(gemini_dir)

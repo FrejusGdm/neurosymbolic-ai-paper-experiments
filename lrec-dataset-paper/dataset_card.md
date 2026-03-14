@@ -16,6 +16,16 @@ tags:
 - togo
 - west-africa
 pretty_name: French-Adja Parallel Corpus
+extra_gated_prompt: >-
+  This dataset contains French-Adja parallel text created in collaboration with
+  the Adja-speaking community in Benin. Access requires agreement to the terms
+  below. Please fill out all fields.
+extra_gated_fields:
+  Name: text
+  Email: text
+  Affiliation: text
+  Intended use: text
+  I agree to use this dataset only for research purposes and to respect the rights of the Adja-speaking community: checkbox
 size_categories:
 - 1K<n<10K
 source_datasets:
@@ -52,7 +62,7 @@ configs:
 
 # French-Adja Parallel Corpus
 
-**The first publicly available parallel corpus for Adja, an under-resourced Gbe language spoken by approximately 1,000,000 people in Benin and Togo.**
+**The first publicly available parallel text corpus for Adja machine translation, targeting an under-resourced Gbe language spoken by approximately 1,000,000 people in Benin and Togo.**
 
 ## Dataset Description
 
@@ -60,7 +70,7 @@ This dataset contains **10,000 French-Adja sentence pairs** created through a si
 
 ### About Adja
 
-Adja (ISO 639-3: `ajg`) is a Gbe language of the Niger-Congo family, closely related to Fon, Ewe, and Gen. It is spoken by approximately 1 million people, primarily in the Couffo and Mono departments of southern Benin and in southeastern Togo. Despite its significant speaker population, Adja had **no publicly available NLP resources** prior to this work --- no parallel corpora, no machine translation systems, and no labeled computational datasets.
+Adja (ISO 639-3: `ajg`) is a Gbe language of the Niger-Congo family, closely related to Fon, Ewe, and Gen. It is spoken by approximately 1 million people, primarily in the Couffo and Mono departments of southern Benin and in southeastern Togo. Despite its significant speaker population, Adja had **no publicly available text-based NLP resources** prior to this work --- no parallel corpora, no machine translation systems, and no labeled computational datasets. Concurrent work by Justin et al. (2025) introduced Eyaa-Tom, a multi-language dataset for Togolese languages that includes Adja among its targets, but the publicly released Adja data consists only of a small amount of audio — no French-Adja parallel text for MT has been made available.
 
 ### Languages
 

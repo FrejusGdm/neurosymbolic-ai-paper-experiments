@@ -1,0 +1,116 @@
+Test set: 1455 sentences (1455 unique source)
+
+Structured train: 3462 sentences, 0 test overlap
+
+Found 93 train.tsv files
+
+=====================================================================================
+CONTAMINATION REPORT
+=====================================================================================
+
+Condition                                      Train  Overlap   %Test     Source
+-------------------------------------------------------------------------------------
+archive_pre_decontamination/ablations/minimal_pairs/PAIRS-BROKEN   3823      426   29.3%   baseline ⚠️
+archive_pre_decontamination/ablations/minimal_pairs/PAIRS-INTACT   3823      413   28.4%   baseline ⚠️
+archive_pre_decontamination/ablations/module_loo/FULL   3823      413   28.4%   baseline ⚠️
+archive_pre_decontamination/ablations/pronoun/ALL-8   3823      413   28.4%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/10-VERBS   3823      413   28.4%   baseline ⚠️
+archive_pre_decontamination/ablations/module_loo/NO-QUESTIONS   3240      345   23.7%   baseline ⚠️
+archive_pre_decontamination/ablations/module_loo/NO-PAST   3010      322   22.1%   baseline ⚠️
+archive_pre_decontamination/ablations/module_loo/NO-FUTURE   3009      317   21.8%   baseline ⚠️
+archive_pre_decontamination/ablations/module_loo/NO-NEGATION   3024      311   21.4%   baseline ⚠️
+archive_pre_decontamination/ablations/pronoun/REDUCED-4   1941      237   16.3%   baseline ⚠️
+archive_pre_decontamination/ablations/pronoun/SINGULAR-3   1463      235   16.2%   baseline ⚠️
+archive_pre_decontamination/LENGTH-STRATIFIED   1800      192   13.2%   baseline ⚠️
+archive_pre_decontamination/TF-IDF-DIVERSE      1800      186   12.8%   baseline ⚠️
+archive_pre_decontamination/VOCAB-MAXIMIZED     1800      186   12.8%   baseline ⚠️
+archive_pre_decontamination/ablations/module_size_ctrl/NO-QUEST-1K    900      149   10.2%   baseline ⚠️
+archive_pre_decontamination/ablations/module_size_ctrl/FULL-1K    900      141    9.7%   baseline ⚠️
+archive_pre_decontamination/ablations/module_size_ctrl/NO-PAST-1K    900      139    9.6%   baseline ⚠️
+archive_pre_decontamination/ablations/module_size_ctrl/NO-FUT-1K    900      137    9.4%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/5-VERBS-c    935      133    9.1%   baseline ⚠️
+archive_pre_decontamination/ablations/module_size_ctrl/NO-NEG-1K    900      131    9.0%   baseline ⚠️
+archive_pre_decontamination/ablations/pronoun/MINIMAL-1    470      124    8.5%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/5-VERBS-a    969      115    7.9%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/5-VERBS-b    954      113    7.8%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/3-VERBS-b    575      100    6.9%   baseline ⚠️
+archive_pre_decontamination/ablations/module_size_ctrl/BASE-1K    815       81    5.6%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/3-VERBS-c    585       69    4.7%   baseline ⚠️
+archive_pre_decontamination/ablations/module_loo/BASE-ONLY    815       55    3.8%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/3-VERBS-a    647       52    3.6%   baseline ⚠️
+archive_pre_decontamination/ablations/verb/1-VERB    216       26    1.8%   baseline ⚠️
+ablations/minimal_pairs/PAIRS-BROKEN            3397        0    0.0%          —
+ablations/minimal_pairs/PAIRS-INTACT            3410        0    0.0%          —
+ablations/module_loo/BASE-ONLY                   760        0    0.0%          —
+ablations/module_loo/FULL                       3410        0    0.0%          —
+ablations/module_loo/NO-FUTURE                  2692        0    0.0%          —
+ablations/module_loo/NO-NEGATION                2713        0    0.0%          —
+ablations/module_loo/NO-PAST                    2688        0    0.0%          —
+ablations/module_loo/NO-QUESTIONS               2895        0    0.0%          —
+ablations/module_size_ctrl/BASE-1K               734        0    0.0%          —
+ablations/module_size_ctrl/FULL-1K               759        0    0.0%          —
+ablations/module_size_ctrl/NO-FUT-1K             763        0    0.0%          —
+ablations/module_size_ctrl/NO-NEG-1K             769        0    0.0%          —
+ablations/module_size_ctrl/NO-PAST-1K            761        0    0.0%          —
+ablations/module_size_ctrl/NO-QUEST-1K           751        0    0.0%          —
+ablations/pronoun/ALL-8                         3410        0    0.0%          —
+ablations/pronoun/MINIMAL-1                      346        0    0.0%          —
+ablations/pronoun/REDUCED-4                     1704        0    0.0%          —
+ablations/pronoun/SINGULAR-3                    1228        0    0.0%          —
+ablations/verb/1-VERB                            190        0    0.0%          —
+ablations/verb/10-VERBS                         3410        0    0.0%          —
+ablations/verb/3-VERBS-a                         595        0    0.0%          —
+ablations/verb/3-VERBS-b                         475        0    0.0%          —
+ablations/verb/3-VERBS-c                         516        0    0.0%          —
+ablations/verb/5-VERBS-a                         854        0    0.0%          —
+ablations/verb/5-VERBS-b                         841        0    0.0%          —
+ablations/verb/5-VERBS-c                         802        0    0.0%          —
+baselines/LENGTH-STRATIFIED                     1608        0    0.0%          —
+baselines/TF-IDF-DIVERSE                        1614        0    0.0%          —
+baselines/VOCAB-MAXIMIZED                       1614        0    0.0%          —
+exp1/RANDOM-10K                                 7200        0    0.0%          —
+exp1/RANDOM-10K_STRUCTURED-4K                  10316        0    0.0%          —
+exp1/RANDOM-4K                                  3600        0    0.0%          —
+exp1/RANDOM-6K_STRUCTURED-4K                    8516        0    0.0%          —
+exp1/STRUCTURED-2K                              1800        0    0.0%          —
+exp1/STRUCTURED-4K-ONLY                         3116        0    0.0%          —
+exp2/RANDOM-1000                                 900        0    0.0%          —
+exp2/RANDOM-10000                               7200        0    0.0%          —
+exp2/RANDOM-200                                  180        0    0.0%          —
+exp2/RANDOM-2000                                1800        0    0.0%          —
+exp2/RANDOM-4000                                3600        0    0.0%          —
+exp2/RANDOM-500                                  450        0    0.0%          —
+exp2/RANDOM-6000                                5400        0    0.0%          —
+exp2/RANDOM-6K_STRUCTURED-1000                  6300        0    0.0%          —
+exp2/RANDOM-6K_STRUCTURED-2000                  7200        0    0.0%          —
+exp2/RANDOM-6K_STRUCTURED-4000                  8516        0    0.0%          —
+exp2/RANDOM-6K_STRUCTURED-500                   5850        0    0.0%          —
+exp2/RANDOM-8000                                7200        0    0.0%          —
+exp2/REPLACE-R6000_S4000                        8516        0    0.0%          —
+exp2/REPLACE-R8000_S2000                        9000        0    0.0%          —
+exp2/REPLACE-R9000_S1000                        8100        0    0.0%          —
+exp2/REPLACE-R9500_S500                         7650        0    0.0%          —
+exp2/STRUCTURED-1000                             900        0    0.0%          —
+exp2/STRUCTURED-200                              180        0    0.0%          —
+exp2/STRUCTURED-2000                            1800        0    0.0%          —
+exp2/STRUCTURED-3000                            2649        0    0.0%          —
+exp2/STRUCTURED-4000                            3116        0    0.0%          —
+exp2/STRUCTURED-500                              450        0    0.0%          —
+new_experiments/ablations/additive/ADD-M1M2     1292        0    0.0%          —
+new_experiments/ablations/additive/ADD-M1M2M3   1944        0    0.0%          —
+new_experiments/ablations/additive/ADD-M1M2M3M4   2597        0    0.0%          —
+new_experiments/baselines/STRUCT4K-ALL-BASELINES   6664        0    0.0%          —
+new_experiments/baselines/STRUCT4K-LENGTH2K     4563        0    0.0%          —
+new_experiments/baselines/STRUCT4K-TFIDF2K      4568        0    0.0%          —
+new_experiments/baselines/STRUCT4K-VOCAB2K      4568        0    0.0%          —
+
+=====================================================================================
+CLEAN conditions: 64
+CONTAMINATED conditions: 29
+
+⚠️  Contaminated conditions have test sentences in their training data.
+   This inflates evaluation metrics. Options:
+   1. Re-split: remove test sentences from train, retrain
+   2. Re-evaluate: score only on non-overlapping test subset
+   3. Disclose: note the overlap in the paper
+=====================================================================================
